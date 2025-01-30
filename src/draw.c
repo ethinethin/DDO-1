@@ -14,7 +14,7 @@ static void     draw_rect_fill(struct sdl2_session *cur_sdl2, int x, int y, int 
 static void     draw_rect_line(struct sdl2_session *cur_sdl2, int x, int y, int w, int h, uint8_t border[4]);
 
 /* colors */
-static uint8_t BLACK[4] = { 0, 0, 0, 255 };
+static uint8_t BLACK[4] = { 26, 26, 26, 255 };
 static uint8_t WHITE[4] = { 255, 255, 255, 255 };
 static uint8_t GREEN[4] = { 0, 255, 0, 255 };
 
@@ -29,7 +29,7 @@ draw_all(struct sdl2_session *cur_sdl2, struct ddo1 *cur_ddo1)
 static void
 draw_clear(struct sdl2_session *cur_sdl2)
 {
-        SDL_SetRenderDrawColor(cur_sdl2->display.renderer, 0, 0, 0, 255);
+        SDL_SetRenderDrawColor(cur_sdl2->display.renderer, BLACK[0], BLACK[1], BLACK[2], BLACK[3]);
         SDL_RenderClear(cur_sdl2->display.renderer);
 }
 
