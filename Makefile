@@ -1,6 +1,7 @@
 TARGET=ddo1
 CC?=clang
-CFLAGS=-I./lib -Wall -Wextra -Wpedantic -lSDL2
+#CFLAGS=-I./lib -Wall -Wextra -Wpedantic -lSDL2
+CFLAGS=-I./lib -Wall -Wextra -lSDL2
 CFILES=./src/*.c
 
 default:

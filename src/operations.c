@@ -13,6 +13,8 @@ static void     INSTRUCTION_IOT(struct ddo1 *cur_ddo1, WORDTYPE instruction);
 static void     INSTRUCTION_OPR(struct ddo1 *cur_ddo1, WORDTYPE instruction);
 static void     OPR_GROUP1_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction);
 static void     OPR_GROUP2_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction);
+static void     rotate(struct ddo1 *cur_ddo1, char direction, int n);
+static void     byte_swap(struct ddo1 *cur_ddo1);
 
 void
 execute(struct ddo1 *cur_ddo1, WORDTYPE instruction)
@@ -100,11 +102,7 @@ INSTRUCTION_TAD(struct ddo1 *cur_ddo1, WORDTYPE address)
                 /* Check if you had an overflow */
                 if (cur_ddo1->AC > result || cur_ddo1->memory[address] > result) {
                         /* Complement the link bit */
-                        if (cur_ddo1->L == 0) {
-                                cur_ddo1->L = 1;
-                        } else {
-                                cur_ddo1->L = 0;
-                        }
+                        cur_ddo1->L = !cur_ddo1->L;
                 }
         }
         /* Store the result in the accumulator */
@@ -156,7 +154,8 @@ INSTRUCTION_OPR(struct ddo1 *cur_ddo1, WORDTYPE instruction)
 {
         /* Mask out non-group bits and check which group the command is for */
         switch(instruction & BITMASK_OPR_GROUPS) {
-                case OPR_GROUP1:
+                case OPR_GROUP1a:
+                case OPR_GROUP1b:
                         OPR_GROUP1_HANDLER(cur_ddo1, instruction);
                         break;
                 case OPR_GROUP2:
@@ -174,11 +173,95 @@ INSTRUCTION_OPR(struct ddo1 *cur_ddo1, WORDTYPE instruction)
 static void
 OPR_GROUP1_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
 {
-        
+        /* Was NOP called? Just return - no operation necessary */
+        if (instruction == GROUP1_NOP) return;
+        /* Any of these commands can be called with others, but happen first */
+        if ((instruction & GROUP1_CLA) == GROUP1_CLA) cur_ddo1->AC = 0;
+        if ((instruction & GROUP1_CLL) == GROUP1_CLL) cur_ddo1->L = 0;
+        if ((instruction & GROUP1_CMA) == GROUP1_CMA) cur_ddo1->AC = ~cur_ddo1->AC;
+        if ((instruction & GROUP1_CML) == GROUP1_CML) cur_ddo1->L = !cur_ddo1->L;
+        if ((instruction & GROUP1_IAC) == GROUP1_IAC) {
+                cur_ddo1->AC += 1;
+                if (cur_ddo1->AC == 0) cur_ddo1->L = !cur_ddo1->L;
+        }
+        /* If a rotate is called, check if it's twice before once */
+        if ((instruction & GROUP1_RTR) == GROUP1_RTR) {
+                rotate(cur_ddo1, 'r', 2);
+        } else if ((instruction & GROUP1_RTL) == GROUP1_RTL) {
+                rotate(cur_ddo1, 'l', 2);
+        } else if ((instruction & GROUP1_RAR) == GROUP1_RAR) {
+                rotate(cur_ddo1, 'r', 1);
+        } else if ((instruction & GROUP1_RAL) == GROUP1_RAL) {
+                rotate(cur_ddo1, 'l', 1);
+        } else if ((instruction & GROUP1_BSW) == GROUP1_BSW) {
+                byte_swap(cur_ddo1);
+        }
 }
 
 static void
 OPR_GROUP2_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
 {
-        
+        /* Was NOP called? Just return - no operation necessary */
+        if (instruction == GROUP2_NOP) return;
+        /* Logical tests are done in three groups here - but you have to *
+         * check for SPA, SNA, or SZL first because of the bitmasks      */
+        if (((instruction & GROUP2_SPA) == GROUP2_SPA && (int16_t) cur_ddo1->AC >= 0) ||
+            ((instruction & GROUP2_SNA) == GROUP2_SNA && cur_ddo1->AC != 0) ||
+            ((instruction & GROUP2_SZL) == GROUP2_SZL && cur_ddo1->L == 0)) {
+                cur_ddo1->PC += 1;
+        } else if (((instruction & GROUP2_SMA) == GROUP2_SMA && (int16_t) cur_ddo1->AC < 0) ||
+                   ((instruction & GROUP2_SZA) == GROUP2_SZA && cur_ddo1->AC == 0) ||
+                   ((instruction & GROUP2_SNL) == GROUP2_SNL && cur_ddo1->L != 0)) {
+                cur_ddo1->PC += 1;
+        } else if ((instruction & GROUP2_SKP) == GROUP2_SKP) {
+                cur_ddo1->PC += 1;
+        }
+
+        /* If CLA is called, the AC is cleared after logical tests */
+        if ((instruction & GROUP2_CLA) == GROUP2_CLA) cur_ddo1->AC = 0;
+        /* I am not going to implement the OSR operation ... at least not yet *
+           because it is a "front panel" operation and.. yeah.. you get it    */
+        if ((instruction & GROUP2_OSR) == GROUP2_OSR) return;
+        /* Was HLT called? Stop operation */
+        if ((instruction & GROUP2_HLT) == GROUP2_HLT) cur_ddo1->run = 0;
 }
+
+static void
+rotate(struct ddo1 *cur_ddo1, char direction, int n)
+{
+        uint8_t linkbit, leftmostbit, rightmostbit;
+        do {
+                /* Save values of the link bit, and the edges of the AC */
+                linkbit = cur_ddo1->L;
+                leftmostbit = ((cur_ddo1->AC & ROT_LEFTMOST_BIT) == ROT_LEFTMOST_BIT) ? 1 : 0;
+                rightmostbit = ((cur_ddo1->AC & ROT_RIGHTMOST_BIT) == ROT_RIGHTMOST_BIT) ? 1 : 0;
+                /* Shift left or right accordingly */
+                if (direction == 'l') {
+                        cur_ddo1->AC = cur_ddo1->AC << 1;
+                        if (linkbit == 1) cur_ddo1->AC += 1;
+                        cur_ddo1->L = leftmostbit;
+                } else if (direction == 'r') {
+                        cur_ddo1->AC = cur_ddo1->AC >> 1;
+                        if (linkbit == 1) cur_ddo1->AC += ROT_LEFTMOST_BIT;
+                        cur_ddo1->L = rightmostbit;
+                }
+                /* Decrement the number of loops remaining */
+                n -= 1;
+        } while(n > 0);
+} // This passed all tests 2025-01-30
+
+static void
+byte_swap(struct ddo1 *cur_ddo1)
+{
+        /* Swap the lower half of the AC with the upper half */
+        uint16_t tmp;
+        
+        /* Put the lower half of the AC in tmp */
+        tmp = cur_ddo1->AC & BSW_LOWERBYTE;
+        /* Bitshift the upper half down */
+        cur_ddo1->AC = cur_ddo1->AC >> BSW_SHIFT;
+        /* Bitshift the lower half up in tmp */
+        tmp = tmp << BSW_SHIFT;
+        /* Combine the numbers together */
+        cur_ddo1->AC += tmp;
+} // This passed all tests 2025-01-30

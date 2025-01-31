@@ -1,10 +1,15 @@
 # DDO-1
 
-In the fictional 1960s, engineers developed the inexpensive and popular minicomputer
-called the Dynamic Data Organizer model 1, or DDO-1. This was a 16-bit computer
-that ran with a small instruction set (only 6 memory-requiring instructions),
-a low amount of resources (two 16-bit registers, one 1-bit register, 65,535 16-bit
-words of random access memory), and a few peripherals.
+This project is a simulator for an artificial computer architecture called the
+Dynamic Data Organizer model 1, or DDO-1. It is a Turing-complete 16-bit computer
+that uses a small instruction set (6 memory-requiring instructions and a handful
+of bit-coded micro-instructions). It has two 16-bit registers (AC and PC), a 
+1-bit register (L, which functions as a carry flag), 65,535 16-bit words of
+random access memory, and some peripherals. 
 
-This project is an attempt to bring this computer back to reality by implementing
-a basic, portable simulator.
+Implemented so far:
+
+A majority of the instructions are in place and I have tested and validated
+about half of them. Right now, the panel displayed the PC (top row), and the
+L + AC (bottom row). I need to implement a way to load programs from a file. I
+also need to write an assembler so I don't have to manually assemble files.

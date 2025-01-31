@@ -23,11 +23,6 @@ main(void)
 	cur_sdl2 = init_sdl2(1280, 720, "DDO-1");
 	/* Set up the current computer */
 	cur_ddo1 = init_ddo1();
-	cur_ddo1->AC = 1;
-	cur_ddo1->PC = 2048;
-	cur_ddo1->memory[2049] = 2068;
-	cur_ddo1->memory[2068] = 25;
-	execute(cur_ddo1, 14337);
 	/* Enter main loop */
 	while (cur_sdl2->running == SDL_TRUE) {
 		draw_all(cur_sdl2, cur_ddo1);

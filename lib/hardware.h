@@ -12,6 +12,7 @@ struct ddo1 {
         uint8_t L;
         WORDTYPE PC;
         WORDTYPE memory[MEMSIZE];
+        uint8_t run;
 };
 
 /* function prototypes */
