@@ -4,6 +4,6 @@ by outputting it word by word via a C program. Not the best way to do this
 but this will help me move forward with the computer. I will write an
 assembler later to make sure I don't have to do this manually every time.
 
-The binary file is loop_test.ddo1. The others are self-explanatory. The
+The binary file is loop_test.bin. The others are self-explanatory. The
 binary file is little endian, with each 16-bit word output with the low order
 byte first.

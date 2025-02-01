@@ -12,7 +12,7 @@ init_ddo1(void)
         cur_ddo1->AC = 0;
         cur_ddo1->L = 0;
         cur_ddo1->PC = 0;
-        cur_ddo1->run = 0;
+        cur_ddo1->run = DDO1_OFF;
         for (i = 0; i < MEMSIZE; i += 1) {
                 cur_ddo1->memory[i] = 0;
         }

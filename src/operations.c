@@ -132,15 +132,17 @@ INSTRUCTION_JMS(struct ddo1 *cur_ddo1, WORDTYPE address)
 {
         /* Store the current address in word 0 of the subroutine */
         cur_ddo1->memory[address] = cur_ddo1->PC;
-        /* Move to word 1 of the subroutine */
-        cur_ddo1->PC = address + 1;
+        /* Move to word 0 of the subroutine - this will get incremented *
+         * to word 1 before execution of the next instruction           */
+        cur_ddo1->PC = address;
 }
 
 static void
 INSTRUCTION_JMP(struct ddo1 *cur_ddo1, WORDTYPE address)
 {
-        /* Jump to the address */
-        cur_ddo1->PC = address;
+        /* Jump to the address - 1, which will get incremented to the *
+         * address before execution of the next instruction           */
+        cur_ddo1->PC = address - 1;
 } // This passed all tests 2025-01-28
 
 static void

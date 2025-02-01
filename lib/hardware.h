@@ -3,8 +3,15 @@
 
 #include <stdint.h>
 
+/* definitions for computer properties - changing these may *
+ * break the computer                                       */
 #define WORDTYPE uint16_t
 #define MEMSIZE 65536
+#define DDO1_OFF 0
+#define DDO1_ON 1
+/* definitions for page locations */
+#define PAGE_0  0
+#define PAGE_1  2048
 
 /* Struct for DDO-1 hardware */
 struct ddo1 {
