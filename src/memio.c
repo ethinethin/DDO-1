@@ -7,11 +7,12 @@ int
 load_memory(struct ddo1 *cur_ddo1, char *file)
 {
         WORDTYPE hb, lb;
+        int c;
         int memloc;
         FILE *f;
         
         /* Try to open the file */
-        f = fopen(file, "r");
+        f = fopen(file, "rb");
         if (f == NULL) {
                 /* File failed to open */
                 return LOAD_ERROR;
@@ -19,12 +20,14 @@ load_memory(struct ddo1 *cur_ddo1, char *file)
         /* Load the contents of the file into memory location 0 */
         memloc = 0;
         /* Load in bytes two at a time - these are stored little endian */
-        while ((char) (lb = fgetc(f)) != EOF) {
+        while ((c = fgetc(f)) != EOF) {
+                lb = c;
                 /* If there are an odd number of bytes, the file didn't load right */
-                if ((char) (hb = fgetc(f)) == EOF) {
+                if ((c = fgetc(f)) == EOF) {
                         fclose(f);
                         return LOAD_ERROR;
                 }
+                hb = c;
                 /* If the file is too big, it won't load correctly */
                 if (memloc > MEMSIZE) {
                         fclose(f);

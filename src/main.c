@@ -37,7 +37,13 @@ main(void)
 		if (cur_ddo1->run == DDO1_ON) {
 			/* execute the current instruction, increase program counter, then draw */
 			execute(cur_ddo1, cur_ddo1->memory[cur_ddo1->PC]);
-			if (cur_ddo1->run == DDO1_ON) cur_ddo1->PC += 1;
+			if (cur_ddo1->run == DDO1_ON) {
+				cur_ddo1->PC += 1;
+				SDL_Delay(10);
+			} else {
+				/* Computer was halted with the last execution, so we draw */
+				draw_all(cur_sdl2, cur_ddo1);
+			}
 		} else {
 			/* Computer is halted, so delay 50 ms to save CPU cycles */
 			SDL_Delay(50);

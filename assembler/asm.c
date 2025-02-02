@@ -236,6 +236,12 @@ void handle_opcode(char *word, int n)
 
         /* Assign the value of word1 to the operation */
         operation = OPCODES[n].binary;
+        /* Check if indirection is used */
+        if (word[0] == '(') {
+                /* Yes, so OR the indrection code and increment the word by 1 */
+                operation |= INDIRECTION;
+                word += 1;
+        }
         /* OR the address of the label specified by word2 to    *
          * the operation                                        */
         operation |= (label_address(word) - 2048);

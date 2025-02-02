@@ -130,8 +130,8 @@ INSTRUCTION_DCA(struct ddo1 *cur_ddo1, WORDTYPE address)
 static void
 INSTRUCTION_JMS(struct ddo1 *cur_ddo1, WORDTYPE address)
 {
-        /* Store the current address in word 0 of the subroutine */
-        cur_ddo1->memory[address] = cur_ddo1->PC;
+        /* Store the current address + 1 (return address) in word 0 of the subroutine */
+        cur_ddo1->memory[address] = cur_ddo1->PC + 1;
         /* Move to word 0 of the subroutine - this will get incremented *
          * to word 1 before execution of the next instruction           */
         cur_ddo1->PC = address;
