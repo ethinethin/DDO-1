@@ -225,7 +225,7 @@ OPR_GROUP2_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
            because it is a "front panel" operation and.. yeah.. you get it    */
         if ((instruction & GROUP2_OSR) == GROUP2_OSR) return;
         /* Was HLT called? Stop operation */
-        if ((instruction & GROUP2_HLT) == GROUP2_HLT) cur_ddo1->run = 0;
+        if ((instruction & GROUP2_HLT) == GROUP2_HLT) cur_ddo1->run = DDO1_OFF;
 }
 
 static void

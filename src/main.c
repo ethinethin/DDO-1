@@ -8,7 +8,7 @@
 #include "operations.h"
 
 /* Render every X operations */
-#define RENDER_EVERY 20
+#define RENDER_EVERY 1
 
 /* Function prototypes */
 static struct sdl2_session *	init_sdl2(int w, int h, const char *name);
@@ -29,7 +29,7 @@ main(void)
 	/* Set up the current computer */
 	cur_ddo1 = init_ddo1();
 	/* Try to load memory from the file - this will activate the computer */
-	load_memory(cur_ddo1, "programs/01_loop_test/loop_test.bin");
+	load_memory(cur_ddo1, "assembler/a.bin");
 	counter = 0;
 	/* Enter main loop */
 	while (cur_sdl2->running == SDL_TRUE) {
@@ -37,7 +37,7 @@ main(void)
 		if (cur_ddo1->run == DDO1_ON) {
 			/* execute the current instruction, increase program counter, then draw */
 			execute(cur_ddo1, cur_ddo1->memory[cur_ddo1->PC]);
-			cur_ddo1->PC += 1;
+			if (cur_ddo1->run == DDO1_ON) cur_ddo1->PC += 1;
 		} else {
 			/* Computer is halted, so delay 50 ms to save CPU cycles */
 			SDL_Delay(50);
@@ -45,7 +45,7 @@ main(void)
 		/* Don't draw every operation - this is defined above */
 		if (counter % RENDER_EVERY == 0) draw_all(cur_sdl2, cur_ddo1);
 		counter += 1;
-		/* Wait 1 ms and loop */
+		/* Check for event and loop */
 		if (SDL_PollEvent(&event) == 0) continue;
 		if (event.type == SDL_QUIT) {
 			cur_sdl2->running = SDL_FALSE;

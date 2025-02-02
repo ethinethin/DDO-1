@@ -10,7 +10,7 @@ main(void)
                 printf("%c%c", 0, 0);
         }
         // LOOP (memory location 2048, or page 1 mem 0)
-        // CML (0b1110000100000000)
+        //CML (0b1110000100000000)
         printf("%c%c", 0b00000000, 0b11100001);
         // CLA (0b1110100000000000)
         printf("%c%c", 0b00000000, 0b11101000);
