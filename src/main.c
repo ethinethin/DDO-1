@@ -8,7 +8,7 @@
 #include "operations.h"
 
 /* Render every X operations */
-#define RENDER_EVERY 1
+#define RENDER_EVERY 1000
 
 /* Function prototypes */
 static struct sdl2_session *	init_sdl2(int w, int h, const char *name);
@@ -17,38 +17,39 @@ static void			init_disp(struct sdl2_session *cur_sdl2);
 static void			kill_disp(struct sdl2_session *cur_sdl2);
 
 int
-main(void)
+main(int argc, char *argv[])
 {
 	SDL_Event event;
 	struct sdl2_session *cur_sdl2;
 	struct ddo1 *cur_ddo1;
 	int counter;
+	uint16_t instruction;
 	
 	/* Set up current sdl2 session */
 	cur_sdl2 = init_sdl2(1280, 720, "DDO-1");
 	/* Set up the current computer */
 	cur_ddo1 = init_ddo1();
 	/* Try to load memory from the file - this will activate the computer */
-	load_memory(cur_ddo1, "assembler/a.bin");
+	if (argc == 2) load_memory(cur_ddo1, argv[1]);
 	counter = 0;
 	/* Enter main loop */
 	while (cur_sdl2->running == SDL_TRUE) {
 		/* If the computer is running, execute instructions */
 		if (cur_ddo1->run == DDO1_ON) {
-			/* execute the current instruction, increase program counter, then draw */
-			execute(cur_ddo1, cur_ddo1->memory[cur_ddo1->PC]);
-			if (cur_ddo1->run == DDO1_ON) {
-				cur_ddo1->PC += 1;
-				SDL_Delay(10);
-			} else {
-				/* Computer was halted with the last execution, so we draw */
+			/* fetch the instruction, increment PC, then execute */
+			instruction = cur_ddo1->memory[cur_ddo1->PC];
+			cur_ddo1->PC += 1;
+			execute(cur_ddo1, instruction);
+			/* redraw if the computer was halted */
+			if (cur_ddo1->run == DDO1_OFF) {
 				draw_all(cur_sdl2, cur_ddo1);
 			}
 		} else {
 			/* Computer is halted, so delay 50 ms to save CPU cycles */
 			SDL_Delay(50);
 		}
-		/* Don't draw every operation - this is defined above */
+		/* Don't draw after every operation - only after the number of *
+		 * instructions defined above  				       */
 		if (counter % RENDER_EVERY == 0) draw_all(cur_sdl2, cur_ddo1);
 		counter += 1;
 		/* Check for event and loop */
