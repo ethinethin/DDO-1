@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#define PAGE_1          0b0000100000000000
-#define INDIRECTION     0b0001000000000000
+#define PAGE_BIT        0b0000100000000000
+#define INDIRECT_BIT    0b0001000000000000
 
 /* Define opcodes, and microinstructions */
 struct opcodes {

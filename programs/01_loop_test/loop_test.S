@@ -1,12 +1,12 @@
 START 2048              ; Start at 2048
-LOOP,
+loop,
 CML                     ; complement the link bit
 CLA                     ; clear the accumulator
-TAD AMOUNT              ; load AMOUNT into the accumulator (for display purposes)
-ISZ AMOUNT              ; increment AMOUNT and skip if zero
-JMP LOOP                ; loop
+TAD amount              ; load amount into the accumulator (for display purposes)
+ISZ amount              ; increment amount and skip if zero
+JMP loop                ; loop
 HLT
-AMOUNT, -1000           ; Number of loops
+amount, -1000           ; Number of loops
 END                     ; Program is finished
 
 ; Commentary:

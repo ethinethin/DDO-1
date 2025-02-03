@@ -1,23 +1,23 @@
 START 2048                      ; start at page 1, memory 0
 CLA CLL                         ; initially clear accumulator and link bit
-LOOP,
-TAD VAR2                        ; put VAR2 -> VAR1
-DCA VAR1
-TAD RES                         ; put RES -> VAR2
-DCA VAR2
-JMP ADD                         ; add VAR1 + VAR2
-RETURN,
-ISZ COUNTER                     ; increase COUNTER
-JMP LOOP                        ; loop if COUNTER not 0
+loop,
+TAD var2                        ; put var2 -> var1
+DCA var1
+TAD res                         ; put res -> var2
+DCA var2
+JMP add                         ; add var1 + var2
+return,
+ISZ counter                     ; increase counter
+JMP loop                        ; loop if counter not 0
 CLA                             ; finished loop, load the result into the AC
-TAD RES
+TAD res
 HLT                             ; stop operation
-ADD,                            ; add VAR1 and VAR2, store result in RES
-TAD VAR1
-TAD VAR2
-DCA RES
-JMP RETURN
-VAR1, 0
-VAR2, 0
-RES, 1
-COUNTER, -23
+add,                            ; add var1 and var2, store result in res
+TAD var1
+TAD var2
+DCA res
+JMP return
+var1, 0
+var2, 0
+res, 1
+counter, -23
