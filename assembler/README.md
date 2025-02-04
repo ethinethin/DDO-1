@@ -23,4 +23,4 @@ All keywords should be capitalized and all labels should be lowercase (not manda
     JMP label              ; jump to address of label
     JMP (label)            ; jump to address stored in label
 
-See ../programs/08_spacing/spacing.S for formatting recommendations.
+See examples in ../programs/ for formatting recommendations/standards.
