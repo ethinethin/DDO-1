@@ -6,7 +6,7 @@ max_loops, 2                    ; max number of loops
 p1loc, 2048                     ; store address of page 1
 p2loc, 4096                     ; store address of page 2
 PPD                             ; pad to page 1
-;;; page 1
+;;; page 1 -- program entry point
 CLA                             ; add var1 to mem_0
 TAD var1                        ; loop 1: mem_0 = 200 + 317 = 517
 TAD mem_0                       ; loop 2: mem_0 = 607 + 317 = 924

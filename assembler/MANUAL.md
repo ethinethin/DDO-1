@@ -22,9 +22,9 @@ END is used to signify that assembly is finished. You can include documentation 
 `PAD` and `PPD` (page pad) are used to pad zeroes. `PAD` is given a number, to specify how many zeroes are padded, while `PPD` stands alone and means "pad to the next page." For example:
 
     START 0         ; Start at memory location 0 (memory location 0 of page 0)
-    PAD 100         ; pad with 100 zeroes
-    CLA             ; this instruction is in memory location 101
-    PPD             ; pad until the next page
+    PAD 100         ; pad with 100 zeroes (memory locations 0-99)
+    CLA             ; this instruction is in memory location 100
+    PPD             ; pad with zeroes until the next page
     CLA             ; this instruction is in memory location 2048
 
 ### Labels
@@ -58,7 +58,7 @@ The instruction acts on the value stored in memory at that address. If parenthes
 
 ### Microinstructions
 
-Microinstructions are specified by the microinstructions keywords. Multiple microinstructions (up to 4*) can be declared on the same line, but only microinstructions in the same group. Microinstructions declared together occur in the same clock cycle as each other. If declared together, the precedence of microinstructions is independent of the order they're specified - rather, they act in the order specified on the table below. If a different precedence is required, they must be specified on seperate lines, but they act in separate clock cycles. (*note: up to 4 microinstructions not implemented yet, only 2 so far)
+Microinstructions are specified by the microinstructions keywords. Multiple microinstructions (up to 4) can be declared on the same line, but only microinstructions in the same group. Microinstructions declared together occur in the same clock cycle as each other. If declared together, the precedence of microinstructions is independent of the order they're specified - rather, they act in the order specified on the table below. If a different precedence is required, they must be specified on seperate lines, but they act in separate clock cycles.
 
 Some microinstructions are mutually exclusive, which follows logic. E.g. `SNL` (skip on L != 0) and `SZL` (skip on L = 0) are contradictory, and cannot be specified together.
 
@@ -86,10 +86,12 @@ Some microinstructions are mutually exclusive, which follows logic. E.g. `SNL` (
 |2|OSR|OR switches with AC||
 |2|HLT|Halt operation||
 
+One microinstruction oddity: if you are using CLA, and intend for it to be combined with group 2 microinstructions, make sure it is not the first microinstruction in the line, or the assembler will think it's supposed to be with group 1 instructions.
+
 ## Running the assembler
 
 Compile the assembler with `make`, then run via:
 
 `./asm input_file.S`
 
-The output will be `a.bin`.
+The assembled binary will be output to the file `a.out`.

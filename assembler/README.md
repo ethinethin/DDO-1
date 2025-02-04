@@ -1,12 +1,14 @@
 # Assembler
 
-Run by ./asm file.S
+See MANUAL.md for operation instructions
 
-Output will be a.bin ... maybe this should be a.out for historical reasons?
+## Problem:
 
-Problems/To be implemented:
-- More than 2 words (e.g. combined microcodes) not implemented yet
-- Store addresses (via labels) after labels, e.g.
+Label names can get confused if similar, e.g. "loop2" may be read as "loop"; I need to correct the string logic for this, but for now, I will just keep labels different ("loop1" and "loop2" would fix this problem)
+
+## This is not yet implemented:
+
+Store addresses (via labels) after labels, e.g.:
 
     ; on page 0
     page2_label_location, page2_label
@@ -14,13 +16,11 @@ Problems/To be implemented:
     ; on page 2
     page2_label,
 
-(which would allow jumping to page2_label from anywhere, via `JMP (page2_label_location)`)
+which would allow jumping to page2_label from anywhere, via `JMP (page2_label_location)`.
 
-All keywords should be capitalized and all labels would be best if lowercase. Indirection is specified by brackets, e.g.:
+All keywords should be capitalized and all labels should be lowercase (not mandatory but helpful). Indirection is specified by brackets, e.g.:
 
-JMP label              ; jump to address of label
-JMP (label)            ; jump to address stored in label
+    JMP label              ; jump to address of label
+    JMP (label)            ; jump to address stored in label
 
-Does this work? Well, the tests I've written so far work. They are in ../programs, and are fairly simple, but they seem to work.
-
-A problem, similar loop labels may give grief, e.g. "loop" vs. "loop2", any instances of "loop2" will be read as "loop" .. I need to fix the string logic, should be easy
+See ../programs/08_spacing/spacing.S for formatting recommendations.

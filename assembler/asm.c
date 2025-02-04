@@ -14,12 +14,13 @@ void            add_label(char buf[1024], int lineloc);
 int             calc_page(uint16_t address);
 int             is_more_with_label(char buf[1024]);
 void            parse_instructions(FILE *f);
+void            tokenize_line(char buf[1024], char *word[4]);
 int             is_code(char *word, struct opcodes *code, int n_codes);
 void            handle_opcode(char *word, int n);
 uint16_t        label_address(char *word);
 uint16_t        fix_page(uint16_t address);
-void            handle_group1_opr(char *word, int n);
-void            handle_group2_opr(char *word, int n);
+void            handle_group1_opr(char *word[4]);
+void            handle_group2_opr(char *word[4]);
 void            handle_label(char *word);
 void            output_binary(void);
 
@@ -80,30 +81,35 @@ void
 set_start(FILE *f)
 {
         char buf[1024];
+        char *word[4];
 
         /* Load the START position */
         if (fgets(buf, 1024, f) == NULL) {
                 fprintf(stderr, "*** Error: did not read from file\n");
                 exit(1);
         }
-        if (strncmp("START ", buf, 6) == 0) {
-                start_location(buf);
+        /* Read until you get a line with a command */
+        tokenize_line(buf, word);
+        while (word[0] == NULL && fgets(buf, 1024, f) != NULL) {
+                tokenize_line(buf, word);
+        }
+        if (word[0] == NULL) {
+                fprintf(stderr, "*** Error: file did not contain any commands\n");
+        } else if (strncmp("START", word[0], 5) == 0) {
+                start_location(word[1]);
         } else {
-                fprintf(stderr, "*** Error: file did not contain start location\n");
+                fprintf(stderr, "*** Error: file did not being with START location\n");
                 exit(1);
         }
 }
 
 void
-start_location(char buf[1024])
+start_location(char *word)
 {
-        char *word;
-
-        /* Receiving a line like "START 2048 ; blah blah", so I'm going to *
-         * use strsep twice to isolate the number                          */
-        word = buf;
-        strsep(&word, " ");
-        word = strsep(&word, " ");
+        if (word == NULL) {
+                fprintf(stderr, "*** Error: did not contain START coordinates\n");
+                exit(1);
+        }
         /* Convert to an integer and change memory location */
         MEMLOC = atoi(word);
         START_LOC = MEMLOC;
@@ -114,30 +120,30 @@ find_labels(FILE *f)
 {
         char buf[1024];
         int lineloc;
-        char *word;
+        char *word[4];
+
         /* Fill the label table */
         while (fgets(buf, 1024, f) != NULL)
         {
-                if (strncmp("END", buf, 3) == 0) break;
-                if (strncmp("PAD", buf, 3) == 0) {
+                /* Tokenize the line */
+                tokenize_line(buf, word);
+                if (word[0] == NULL) continue;
+                if (strncmp("END", word[0], 3) == 0) break;
+                if (strncmp("PAD", word[0], 3) == 0) {
                         /* Are we padding? Need to adjust memory */
-                        word = buf;
-                        strsep(&word, " ");
-                        MEMLOC += atoi(word);
-                } else if (strncmp("PPD", buf, 3) == 0) {
+                        MEMLOC += atoi(word[1]);
+                } else if (strncmp("PPD", word[0], 3) == 0) {
                         MEMLOC = 2048 * (calc_page(MEMLOC) + 1);
-                } else if ((lineloc = contains_label(buf)) != 0) {
-                        add_label(buf, lineloc);
+                } else if ((lineloc = contains_label(word[0])) != 0) {
+                        add_label(word[0], lineloc);
                         /* Was there more content after the label? If so,  *
                          * increase memory location by 1                  */
-                        if (is_more_with_label(buf)) {
+                        if (word[1] != NULL) {
                                 MEMLOC += 1;
                         }
                 } else {
                         /* If was an operation, increase memory location */
-                        if (buf[0] != ';' && buf[0] != '\n') {
-                                MEMLOC += 1;
-                        }
+                        MEMLOC += 1;
                 }
         }
         /* Seek back to the beginning of the file and go to beginning of memory */
@@ -211,41 +217,76 @@ void
 parse_instructions(FILE *f)
 {
         char buf[1024];
-        char *word1, *word2;
+        char *word[4];
         int i;
 
         /* parse every line for commands */
         while (fgets(buf, 1024, f) != NULL) {
+                /* Tokenize the line */
+                tokenize_line(buf, word);
                 /* Break if end, or skip if empty line or comment */
                 if (strncmp("END", buf, 3) == 0) return;
-                if (buf[0] == '\n' || buf[0] == ';') continue;
-                /* Pull the two words out of the line */
-                word2 = buf;
-                word1 = strsep(&word2, " ");
-                /* Remove characters after second word */
-                if (word2 != NULL) word2 = strsep(&word2, " "); 
-                if (strncmp("PAD", word1, 3) == 0) {
+                if (word[0] == NULL) continue;
+                if (strncmp("PAD", word[0], 3) == 0) {
                         /* Pad with 0s - just increase current memory location */
-                        MEMLOC += atoi(word2);
-                } else if (strncmp("PPD", word1, 3) == 0) {
-                        printf("%u\n", MEMLOC);
+                        MEMLOC += atoi(word[1]);
+                } else if (strncmp("PPD", word[0], 3) == 0) {
                         MEMLOC = 2048 * (calc_page(MEMLOC) + 1);
-                        printf("%u\n", MEMLOC);
-                } else if ((i = is_code(word1, OPCODES, N_OPCODES)) >= 0) {
-                        handle_opcode(word2, i);
+                } else if ((i = is_code(word[0], OPCODES, N_OPCODES)) >= 0) {
+                        handle_opcode(word[1], i);
                         MEMLOC += 1;
-                } else if ((i = is_code(word1, GROUP1_OPRS, N_GROUP1_OPRS)) >= 0) {
-                        handle_group1_opr(word2, i);
+                } else if ((i = is_code(word[0], GROUP1_OPRS, N_GROUP1_OPRS)) >= 0) {
+                        handle_group1_opr(word);
                         MEMLOC += 1;
-                } else if ((i = is_code(word1, GROUP2_OPRS, N_GROUP2_OPRS)) >= 0) {
-                        handle_group2_opr(word2, i);
+                } else if ((i = is_code(word[0], GROUP2_OPRS, N_GROUP2_OPRS)) >= 0) {
+                        handle_group2_opr(word);
                         MEMLOC += 1;
-                } else if ((i = contains_label(word1)) != 0) {
-                        if (word2 != NULL && word2[0] != ' ' && word2[0] != 0) {
-                                handle_label(word2);
+                } else if ((i = contains_label(word[0])) != 0) {
+                        if (word[1] != NULL) {
+                                handle_label(word[1]);
                                 MEMLOC += 1;
                         }
                 }
+        }
+}
+
+void
+tokenize_line(char buf[1024], char *word[4])
+{
+        char delim;
+        int i, token;
+        char *p;
+
+        /* Initialize all pointers to NULL */
+        for (i = 0; i < 4; i += 1) word[i] = NULL;
+        /* Skip leading whitespace */
+        p = buf;
+        token = 0;
+        while (*p == ' ' || *p == '\t') p += 1;
+        /* If the line is empty, do not continue */
+        if (*p == ';' || *p == '\n' || *p == '\0') return;
+        /* Process up to 4 tokens */
+        while (token < 4 && *p != '\0') {
+                /* Break on comment or newline */
+                if (*p == ';' || *p == '\n') break;
+                /* Point to this token */
+                word[token] = p;
+                token += 1;
+                /* Move forward until we hit a delimiter */
+                while (*p != '\0' &&  *p != ' ' && *p != '\t' && *p != '\n' && *p != ';') p += 1;
+                /* Terminate the token */
+                if (*p == ' ' || *p == '\t' || *p == '\n' || *p == ';') {
+                        delim = *p;
+                        *p = '\0';
+                        /* If at end of line, do not continue */
+                        if (delim == '\n' || delim == ';') break;
+                        /* Move past the delimiter */
+                        p += 1;
+                }
+                /* Move past whitespace */
+                while (*p == ' ' || *p == '\t') p += 1;
+                /* If there is comment or newline, do not continue */
+                if (*p == '\n' || *p == ';') break;
         }
 }
 
@@ -327,30 +368,46 @@ fix_page(uint16_t address)
         }
 }
 
-void handle_group1_opr(char *word, int n)
+void handle_group1_opr(char *word[4])
 {
+        int i, j;
         uint16_t operation;
 
-        /* Assign the value of word1 to the operation */
-        operation = GROUP1_OPRS[n].binary;
-        /* If word2 is a group1 operation, OR it to the operation */
-        if (word != NULL && (n = is_code(word, GROUP1_OPRS, N_GROUP1_OPRS)) >= 0) {
-                operation |= GROUP1_OPRS[n].binary;
+        /* Assign the value of words to the operation */
+        for (i = 0, operation = 0; i < 4; i += 1) {
+                if (word[i] == NULL) break;
+                j = is_code(word[i], GROUP1_OPRS, N_GROUP1_OPRS);
+                if (j >= 0) {
+                        operation |= GROUP1_OPRS[j].binary;
+                } else {
+                        fprintf(stderr, "*** Error: microcoded instruction group mismatch:\n");
+                        for (j = 0; j <= i; j += 1) fprintf(stderr, "***\t%s\n", word[j]);
+                        fprintf(stderr, "*** If CLA is causing this, place it at the end of the chain.\n");
+                        exit(1);
+                }
         }
         /* Assign it to the current memory location */
         MEMORY[MEMLOC] = operation;
 }
 
-void handle_group2_opr(char *word, int n)
+void handle_group2_opr(char *word[4])
 {
+        int i, j;
         uint16_t operation;
 
-        /* Assign the value of word1 to the operation */
-        operation = GROUP2_OPRS[n].binary;
-        /* If word is a group2 operation, OR it to the operation */
-        if (word != NULL && (n = is_code(word, GROUP2_OPRS, N_GROUP2_OPRS)) >= 0) {
-                operation |= GROUP2_OPRS[n].binary;
+        /* Assign the value of words to the operation */
+        for (i = 0, operation = 0; i < 4; i += 1) {
+                if (word[i] == NULL) break;
+                j = is_code(word[i], GROUP2_OPRS, N_GROUP2_OPRS);
+                if (j >= 0) {
+                        operation |= GROUP2_OPRS[j].binary;
+                } else {
+                        fprintf(stderr, "*** Error: microcoded instruction group mismatch:\n");
+                        for (j = 0; j < i; j += 1) fprintf(stderr, "***\t%s\n", word[j]);
+                        exit(1);
+                }
         }
+        /* Assign it to the current memory location */
         MEMORY[MEMLOC] = operation;
 }
 
@@ -369,7 +426,7 @@ output_binary(void)
         FILE *f;
 
         /* Open the damn file */
-        f = fopen("a.bin", "w");
+        f = fopen("a.out", "w");
         if (f == NULL) {
                 fprintf(stderr, "*** Cannot open output file\n");
                 exit(1);
