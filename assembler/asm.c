@@ -10,18 +10,19 @@ void            set_start(FILE *f);
 void            start_location(char buf[1024]);
 void            find_labels(FILE *f);
 int             contains_label(char buf[1024]);
-void            add_label(char buf[1024], int lineloc);
+void            add_label(char buf[1024]);
 int             calc_page(uint16_t address);
-int             is_more_with_label(char buf[1024]);
 void            parse_instructions(FILE *f);
 void            tokenize_line(char buf[1024], char *word[4]);
 int             is_code(char *word, struct opcodes *code, int n_codes);
 void            handle_opcode(char *word, int n);
 uint16_t        label_address(char *word);
+void            sanitize_label(char *word);
 uint16_t        fix_page(uint16_t address);
 void            handle_group1_opr(char *word[4]);
 void            handle_group2_opr(char *word[4]);
 void            handle_label(char *word);
+int             is_label(char *word);
 void            output_binary(void);
 
 /* memory storage */
@@ -119,7 +120,6 @@ void
 find_labels(FILE *f)
 {
         char buf[1024];
-        int lineloc;
         char *word[4];
 
         /* Fill the label table */
@@ -134,8 +134,8 @@ find_labels(FILE *f)
                         MEMLOC += atoi(word[1]);
                 } else if (strncmp("PPD", word[0], 3) == 0) {
                         MEMLOC = 2048 * (calc_page(MEMLOC) + 1);
-                } else if ((lineloc = contains_label(word[0])) != 0) {
-                        add_label(word[0], lineloc);
+                } else if (contains_label(word[0])) {
+                        add_label(word[0]);
                         /* Was there more content after the label? If so,  *
                          * increase memory location by 1                  */
                         if (word[1] != NULL) {
@@ -155,6 +155,7 @@ int
 contains_label(char buf[1024])
 {
         int i;
+
         /* Check if this line contains a label - look for a comma */
         for (i = 0; buf[i] != '\0'; i += 1) {
                 if (buf[i] == ',') {
@@ -169,11 +170,22 @@ contains_label(char buf[1024])
 }
 
 void
-add_label(char buf[1024], int lineloc)
+add_label(char buf[1024])
 {
+        char name[64];
+
+        /* Copy to this buffer and sanitize */
+        strncpy(name, buf, 64);
+        sanitize_label(name);
+
+        /* Check if label already exists */
+        if (is_label(name) >= 0) {
+                fprintf(stderr, "*** Error: the label %s appears multiple times.\n", name);
+                exit(1);
+        }
         /* Add the label to the table */
         LABEL_TABLE[N_LABELS].memloc = MEMLOC;
-        strncpy(LABEL_TABLE[N_LABELS].name, buf, lineloc);
+        strncpy(LABEL_TABLE[N_LABELS].name, name, 64);
         LABEL_TABLE[N_LABELS].page = calc_page(MEMLOC);
         /* Increase label count */
         N_LABELS += 1;
@@ -191,26 +203,6 @@ calc_page(uint16_t address)
                 }
         }
         return -1;
-}
-
-int
-is_more_with_label(char buf[1024])
-{
-        char *word;
-
-        /* Is there a space after the label or not, i.e.:     *
-         * ; label by itself without comments:
-         * LABEL,
-         * LABEL,                  ; label by itself with comments
-         * LABEL, blahblah         ; label with operation
-         */
-        word = buf;
-        strsep(&word, " ");
-        if (word == NULL || word[0] == ' ' || word[0] == '\n') {
-                return 0;
-        } else {
-                return 1;
-        }
 }
 
 void
@@ -325,23 +317,32 @@ void handle_opcode(char *word, int n)
 
 uint16_t label_address(char *word)
 {
-        uint16_t address;
-        int i;
-        size_t label_len;
+        int address;
 
-        /* Cycle through labels until you find the right one,   *
-         * then return the address                              */
-        for (i = 0; i < N_LABELS; i += 1) {
-                label_len = strnlen(LABEL_TABLE[i].name, 64);
-                if (strncmp(word, LABEL_TABLE[i].name, label_len) == 0) {
-                        /* Found it, make sure it's accessible to the current page */
-                        return fix_page(LABEL_TABLE[i].memloc);
+        /* Sanitize label */
+        sanitize_label(word);
+        /* Find memory address of label */
+        address = is_label(word);
+        /* If it is an address, fix it and return */
+        if (address >= 0) return fix_page((uint16_t) address);
+        /* Couldn't find a label so it must be a value instead */
+        address = atoi(word);
+        /* Make sure it's accessible to the current page */
+        return fix_page((uint16_t) address);
+}
+
+void
+sanitize_label(char *word)
+{
+        int i;
+
+        /* Remove right parenthesis from labels in case of indirection */
+        for (i = 0; word[i] != '\0'; i += 1) {
+                if (word[i] == ')' || word[i] == ',') {
+                        word[i] = '\0';
+                        return;
                 }
         }
-        /* Couldn't find a label so it must be a number instead */
-        address = (uint16_t) atoi(word);
-        /* Make sure it's accessible to the current page */
-        return fix_page(address);        
 }
 
 uint16_t
@@ -414,8 +415,32 @@ void handle_group2_opr(char *word[4])
 void
 handle_label(char *word)
 {
-        /* Word must be a value, so add it to current memory location */
-        MEMORY[MEMLOC] = (uint16_t) atoi(word);
+        int address;
+
+        /* Value might be one of the following:                 *
+         *      LABEL, 0                ; value                 *
+         *      LABEL, label            ; another label address *
+         *      LABEL, .                ; self-address          */
+        if (strncmp(word, ".", 2) == 0) {
+                MEMORY[MEMLOC] = MEMLOC;
+        } else if ((address = is_label(word)) >= 0) {
+                MEMORY[MEMLOC] = (uint16_t) address;
+        } else {
+                MEMORY[MEMLOC] = (uint16_t) atoi(word);
+        }
+}
+
+int
+is_label(char *word)
+{
+        int i;
+
+        for (i = 0; i < N_LABELS; i += 1) {
+                if (strncmp(word, LABEL_TABLE[i].name, strnlen(LABEL_TABLE[i].name, 64) + 1) == 0) {
+                        return LABEL_TABLE[i].memloc;
+                }
+        }
+        return -1;
 }
 
 void

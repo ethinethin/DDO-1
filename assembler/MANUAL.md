@@ -32,6 +32,7 @@ END is used to signify that assembly is finished. You can include documentation 
 Labels are specified with a comma. Lowercase is preferred for labels, and they can be declared in two ways: (1) with a value (to specify the value be stored at the address of the label), or (2) on a line by itself, indicating the label's address me the memory location of the next instruction. Examples:
 
     var1, 0         ; Store the value 0, var1 refers to this memory location
+    var2, var1      ; Store the address of var1 in var2 (*** NOT YET IMPLEMENTED ***)
     loop,           ; A label likely used as a loop point
 
 At assembly time, labels are converted into memory addresses. Label names are lost in the assembled binary.
@@ -55,6 +56,24 @@ The instruction acts on the value stored in memory at that address. If parenthes
     TAD var1        ; add the value stored at the label var1 to the AC
     TAD (1000)      ; add the value stored at the address in memory at address 1000
     TAD (var1)      ; add the value stored at the address in memory at label var1
+
+Memory locations in assembly are absolute, not relative. Therefore:
+
+    JMP 0           ; jump to page 0, memory location 0 (valid on all pages)
+    JMP 2048        ; jump to page 1, memory location 0 (only valid on page 1)
+
+If an instruction on the last word of a page is executed, execution will continue on the next page. Subroutines should not span two pages, or the return address will be inaccessible.
+
+Lastly, memory locations 16 through 31 of page 0 are the auto-increment registers. If indirection is used with one of these memory locations, the value contained within is incremented before the operation.
+
+    CLA
+    TAD var1        ; load the value contained at var1
+    DCA 16          ; store the value in auto-increment register
+    TAD (16)        ; load the value stored in the address at auto-increment register
+    HLT
+    var1, 2048
+
+In this code snippet, the value in the AC will be the value located at memory 2049.
 
 ### Microinstructions
 

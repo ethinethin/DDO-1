@@ -15,18 +15,18 @@ The 16-bit words allow 3 bits for op codes, 1 bit for indirection, 1 bit for pag
 
 OOOIZAAAAAAAAAAA
 
-O = opcode
-I = indirect bit (0 = direct, 1 = indirect)
-Z = page bit (0 = page zero, 1 = current page)
-A = address
+- O = opcode
+- I = indirect bit (0 = direct, 1 = indirect)
+- Z = page bit (0 = page zero, 1 = current page)
+- A = address
 
 ### Pages
 
-The 16-bit memory is made up of 32 pages, each consisting of 2048 words. A word in memory can contain an entire memory address, e.g.:
+The 16-bit memory is made up of 32 pages, each consisting of 2048 words. Any given instruction can access memory locations 0-2047 on either the current page (page bit = 1), or page zero (page bit = 0). Jumping to other pages can be accomplished through indirection, by storing the address in an accessible location. For example, if the following address is stored in a word on page 0:
 
-1110011000000001 = 58881 (decimal), or word 1537 (11000000001) in page 28 (11100)
+    1110011000000001 ; page 28 (11100), word 1537 (11000000001)
 
-Instructions can only reference the rightmost 11 bits, so without indirection, this address can only be accessed if the program counter is in the same page (page 28). But if the address is stored in memory on the current page, it can be accessed from anywhere in the current page.
+it could be accessed on any page via indirection.
 
 ## Instruction Set - memory requiring instructions
 

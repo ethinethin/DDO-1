@@ -1,6 +1,6 @@
 ;;;;
-; padding - demonstrate padding zeroes with the PAD command, and
-;           demonstrate moving linearly from one page to next
+; padding - demonstrate padding zeroes with the PAD command, and demonstrate
+;           moving linearly from one page to next
 ;;;;
         START   0               ; start at address 0
 mem_0,          2               ; store value 2 at first byte

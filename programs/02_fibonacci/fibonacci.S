@@ -12,7 +12,7 @@ loop,
         ISZ     index           ; increase loop index
         NOP                     ; placeholder to prevent skips (not necessary)
         TAD     num_loops
-        CMA IAC                 ; convert num_loops to negative and compare to index
+        CMA IAC                 ; find negative num_loops and compare to index
         TAD     index
         SZA                     ; skip next line if AC = 0 (index = num_loops)
         JMP     loop            ; loop if counter not 0
@@ -31,3 +31,4 @@ res,            1
 index,          0
 num_loops,      23
         END
+        

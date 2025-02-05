@@ -1,6 +1,6 @@
 ;;;;
-; indirection - demonstrates some uses of indirection and
-;               a "negative" loop index used for max loops
+; indirection - demonstrates some uses of indirection and a "negative" loop
+;               index used for number of max loops
 ;;;;
         START   2048
         CLA CLL                 ; clear AC, L

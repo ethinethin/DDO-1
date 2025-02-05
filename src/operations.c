@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "hardware.h"
 #include "operations.h"
 
@@ -32,7 +33,6 @@ execute(struct ddo1 *cur_ddo1, WORDTYPE instruction)
         operand = (BITMASK_OPERAND & instruction) >> BITSHIFT_OPERAND;
         /* Find the real address that we're accessing */
         address = real_address(cur_ddo1, (uint8_t) indirect, (uint8_t) page, operand);
-
         /* Call instruction based on op code */
         switch(op_code) {
                 case OPCODE_AND:
@@ -70,6 +70,12 @@ real_address(struct ddo1 *cur_ddo1, uint8_t indirect, uint8_t page, WORDTYPE ope
 {
         WORDTYPE address;
 
+        /* If we are accessing a memory location within 16 to 31 on page 0 indirectly, *
+         * we are accessing an auto-increment register, so it should be incremented    *
+         * before determining the address                                              */
+        if (indirect == 1 && page == 0 && operand >= 16 && operand <= 16) {
+                cur_ddo1->memory[operand] += 1;
+        }
         /* Are we using page zero or current page? */
         if (page == 0) {
                 address = 2047 & operand;
@@ -208,13 +214,28 @@ OPR_GROUP2_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
         if (((instruction & GROUP2_SPA) == GROUP2_SPA && (int16_t) cur_ddo1->AC >= 0) ||
             ((instruction & GROUP2_SNA) == GROUP2_SNA && cur_ddo1->AC != 0) ||
             ((instruction & GROUP2_SZL) == GROUP2_SZL && cur_ddo1->L == 0)) {
+                /* One of the tests was true */
                 cur_ddo1->PC += 1;
+                return;
+        } else if (((instruction & GROUP2_SPA) == GROUP2_SPA && (int16_t) cur_ddo1->AC < 0) ||
+            ((instruction & GROUP2_SNA) == GROUP2_SNA && cur_ddo1->AC == 0) ||
+            ((instruction & GROUP2_SZL) == GROUP2_SZL && cur_ddo1->L != 0)) {
+                /* One of the tests was not true true */
+                return;
         } else if (((instruction & GROUP2_SMA) == GROUP2_SMA && (int16_t) cur_ddo1->AC < 0) ||
                    ((instruction & GROUP2_SZA) == GROUP2_SZA && cur_ddo1->AC == 0) ||
                    ((instruction & GROUP2_SNL) == GROUP2_SNL && cur_ddo1->L != 0)) {
+                /* One of the tests was true */
                 cur_ddo1->PC += 1;
+                return;
+        } else if (((instruction & GROUP2_SMA) == GROUP2_SMA && (int16_t) cur_ddo1->AC >= 0) ||
+                   ((instruction & GROUP2_SZA) == GROUP2_SZA && cur_ddo1->AC != 0) ||
+                   ((instruction & GROUP2_SNL) == GROUP2_SNL && cur_ddo1->L == 0)) {
+                /* One of the tests was not true */
+                return;
         } else if ((instruction & GROUP2_SKP) == GROUP2_SKP) {
                 cur_ddo1->PC += 1;
+                return;
         }
 
         /* If CLA is called, the AC is cleared after logical tests */

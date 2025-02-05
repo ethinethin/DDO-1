@@ -1,22 +1,25 @@
-# Assembler
+# DDO-1 Assembler
 
 See MANUAL.md for operation instructions
 
-## Problem:
+# Features to be implemented
 
-Label names can get confused if similar, e.g. "loop2" may be read as "loop"; I need to correct the string logic for this, but for now, I will just keep labels different ("loop1" and "loop2" would fix this problem)
+## Values alone on lines not implemented
 
-## This is not yet implemented:
+I want to implement values by themselves on lines, probably up to 4, e.g.:
 
-Store addresses (via labels) after labels, e.g.:
+    0 1 2 4                ; four words, specifying the values 0, 1, 2, and 4, respectively
 
-    ; on page 0
-    page2_label_location, page2_label
-    ; ...
-    ; on page 2
-    page2_label,
+I will probably need to add logic for storing ASCII strings "like this" and characters like this: 'c'
 
-which would allow jumping to page2_label from anywhere, via `JMP (page2_label_location)`.
+## Address math not implemented
+
+Address math is not implemented yet. For example, the following will not work:
+
+    TAD var2+1             ; load the value 1 after var2 - NOT IMPLEMENTED
+    JMP .-1                ; jump to current address minus 1 - NOT IMPLEMENTED
+
+# Style guide:
 
 All keywords should be capitalized and all labels should be lowercase (not mandatory but helpful). Indirection is specified by brackets, e.g.:
 

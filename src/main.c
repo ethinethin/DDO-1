@@ -8,7 +8,7 @@
 #include "operations.h"
 
 /* Render every X operations */
-#define RENDER_EVERY 2000
+#define RENDER_EVERY 1
 
 /* Function prototypes */
 static struct sdl2_session *	init_sdl2(int w, int h, const char *name);
@@ -94,7 +94,6 @@ kill_sdl2(struct sdl2_session *cur_sdl2)
 {
 	/* Destroy display, quit SDL, and free the sdl2 session */
 	kill_disp(cur_sdl2);
-	SDL_Quit();
 	free(cur_sdl2);
 }
 
@@ -124,4 +123,5 @@ kill_disp(struct sdl2_session *cur_sdl2)
 	SDL_Delay(100);
 	SDL_DestroyRenderer(cur_sdl2->display.renderer);
 	SDL_DestroyWindow(cur_sdl2->display.window);
+	SDL_Quit();
 }
