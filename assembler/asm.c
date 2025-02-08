@@ -16,6 +16,7 @@ void            parse_instructions(FILE *f);
 void            tokenize_line(char buf[1024], char *word[4]);
 int             is_code(char *word, struct opcodes *code, int n_codes);
 void            handle_opcode(char *word, int n);
+void            handle_iot(int n);
 uint16_t        label_address(char *word);
 void            sanitize_label(char *word);
 uint16_t        fix_page(uint16_t address);
@@ -122,6 +123,7 @@ find_labels(FILE *f)
 {
         char buf[1024];
         char *word[4];
+        int i;
 
         /* Fill the label table */
         while (fgets(buf, 1024, f) != NULL)
@@ -142,9 +144,22 @@ find_labels(FILE *f)
                         if (word[1] != NULL) {
                                 MEMLOC += 1;
                         }
-                } else {
-                        /* If was an operation, increase memory location */
+                } else if (is_code(word[0], OPCODES, N_OPCODES) >= 0 ||
+                           is_code(word[0], IOT_CODES, N_IOT_CODES) >= 0 ||
+                           is_code(word[0], GROUP1_OPRS, N_GROUP1_OPRS) >= 0 ||
+                           is_code(word[0], GROUP2_OPRS, N_GROUP2_OPRS) >= 0) {
+                        /* It was a standard operation that takes up one word */
                         MEMLOC += 1;
+                } else {
+                        /* If was a raw value or values, up to 4 */
+                        for (i = 0; i < 4; i += 1) {
+                                if (word[i] != NULL) {
+                                        MEMLOC += 1;
+                                } else {
+                                        /* If we reached null, stop the loop */
+                                        break;
+                                }
+                        }
                 }
         }
         /* Seek back to the beginning of the file and go to beginning of memory */
@@ -231,6 +246,10 @@ parse_instructions(FILE *f)
                         /* If it's an opcode, pass the operand and opcode number */
                         handle_opcode(word[1], i);
                         MEMLOC += 1;
+                } else if ((i = is_code(word[0], IOT_CODES, N_IOT_CODES)) >= 0) {
+                        /* It's an IOT code, so handle it */
+                        handle_iot(i);
+                        MEMLOC += 1;
                 } else if ((i = is_code(word[0], GROUP1_OPRS, N_GROUP1_OPRS)) >= 0) {
                         /* If the first word is a group1 microcode, handle them */
                         handle_group1_opr(word);
@@ -246,7 +265,7 @@ parse_instructions(FILE *f)
                                 MEMLOC += 1;
                         }
                 } else {
-                        /* It must be a naked value or values */
+                        /* It must be a raw value or values */
                         MEMLOC += handle_values(word);
                         
                 }
@@ -293,7 +312,8 @@ tokenize_line(char buf[1024], char *word[4])
         }
 }
 
-int is_code(char *word, struct opcodes *codes, int n_codes)
+int
+is_code(char *word, struct opcodes *codes, int n_codes)
 {
         int i;
 
@@ -307,7 +327,8 @@ int is_code(char *word, struct opcodes *codes, int n_codes)
         return -1;
 }
 
-void handle_opcode(char *word, int n)
+void
+handle_opcode(char *word, int n)
 {
         uint16_t operation;
 
@@ -326,7 +347,14 @@ void handle_opcode(char *word, int n)
         MEMORY[MEMLOC] = operation;
 }
 
-uint16_t label_address(char *word)
+void
+handle_iot(int n)
+{
+        MEMORY[MEMLOC] = IOT_CODES[n].binary;
+}
+
+uint16_t
+label_address(char *word)
 {
         int address;
 
@@ -380,7 +408,8 @@ fix_page(uint16_t address)
         }
 }
 
-void handle_group1_opr(char *word[4])
+void
+handle_group1_opr(char *word[4])
 {
         int i, j;
         uint16_t operation;
@@ -402,7 +431,8 @@ void handle_group1_opr(char *word[4])
         MEMORY[MEMLOC] = operation;
 }
 
-void handle_group2_opr(char *word[4])
+void
+handle_group2_opr(char *word[4])
 {
         int i, j;
         uint16_t operation;
@@ -446,7 +476,7 @@ handle_values(char *word[4])
 {
         int i;
 
-        /* Parse up to four naked values on a line */
+        /* Parse up to four raw values on a line */
         for (i = 0; i < 4 && word[i] != NULL; i += 1) {
                 MEMORY[MEMLOC + i] = (uint16_t) atoi(word[i]);
         }

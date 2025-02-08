@@ -161,10 +161,10 @@ INSTRUCTION_IOT(struct ddo1 *cur_ddo1, WORDTYPE instruction)
                 cur_ddo1->ints = INTS_ON;
         } else if (instruction == BITMASK_INTS_OFF) {
                 cur_ddo1->ints = INTS_OFF;
-        } else if ((masked_instruction & TTY_P_DEVICE) == TTY_P_DEVICE && (instruction & ~TTY_P_DEVICE) == 0) {
-                // call ttyp handler
-        } else if ((masked_instruction & TTY_K_DEVICE) == TTY_K_DEVICE && (instruction & ~TTY_K_DEVICE) == 0) {
-                // call ttyk handler
+        } else if (masked_instruction == TTY_P_DEVICE) {
+                TTY_P_HANDLER(cur_ddo1, instruction);
+        } else if (masked_instruction == TTY_K_DEVICE) {
+                TTY_K_HANDLER(cur_ddo1, instruction);
         }
 }
 

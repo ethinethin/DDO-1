@@ -20,9 +20,11 @@ reset,
         TAD     hello           ;   register at memory location 16
         DCA     16
         JMP     loop            ; re-enter loop
-ttyo,           0               ; output to TTY device - need to implement in
-                                ;   simulator and assembler - so this is
-                                ;   currently a placeholder subroutine
+ttyo,           0               ; output to TTY printer - wait until device is
+ttyo_l,                         ;   ready, then print out character and clear AC
+        TSF
+        JMP     ttyo_l
+        TLS
         CLA
         JMP     (ttyo)          ; return from subroutine
 hello,          .
