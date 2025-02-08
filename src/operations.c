@@ -232,29 +232,24 @@ OPR_GROUP2_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
         if (instruction == GROUP2_NOP) return;
         /* Logical tests are done in three groups here - but you have to *
          * check for SPA, SNA, or SZL first because of the bitmasks      */
-        if (((instruction & GROUP2_SPA) == GROUP2_SPA && (int16_t) cur_ddo1->AC >= 0) ||
-            ((instruction & GROUP2_SNA) == GROUP2_SNA && cur_ddo1->AC != 0) ||
-            ((instruction & GROUP2_SZL) == GROUP2_SZL && cur_ddo1->L == 0)) {
+        if ((instruction & GROUP2_LOGIC2) == GROUP2_LOGIC2) {
+                if (((instruction & GROUP2_SPA) == GROUP2_SPA && (int16_t) cur_ddo1->AC >= 0) ||
+                    ((instruction & GROUP2_SNA) == GROUP2_SNA && cur_ddo1->AC != 0) ||
+                    ((instruction & GROUP2_SZL) == GROUP2_SZL && cur_ddo1->L == 0) ||
+                    (instruction == GROUP2_SKP)) {
+                        /* One of the tests was true */
+                        cur_ddo1->PC += 1;
+                }
+        } else {
+                if (((instruction & GROUP2_SMA) == GROUP2_SMA && (int16_t) cur_ddo1->AC < 0) ||
+                    ((instruction & GROUP2_SZA) == GROUP2_SZA && cur_ddo1->AC == 0) ||
+                    ((instruction & GROUP2_SNL) == GROUP2_SNL && cur_ddo1->L != 0)) {
                 /* One of the tests was true */
                 cur_ddo1->PC += 1;
-        } else if (((instruction & GROUP2_SPA) == GROUP2_SPA && (int16_t) cur_ddo1->AC < 0) ||
-            ((instruction & GROUP2_SNA) == GROUP2_SNA && cur_ddo1->AC == 0) ||
-            ((instruction & GROUP2_SZL) == GROUP2_SZL && cur_ddo1->L != 0)) {
-                /* One of the tests was not true true, do nothing */
-        } else if (((instruction & GROUP2_SMA) == GROUP2_SMA && (int16_t) cur_ddo1->AC < 0) ||
-                   ((instruction & GROUP2_SZA) == GROUP2_SZA && cur_ddo1->AC == 0) ||
-                   ((instruction & GROUP2_SNL) == GROUP2_SNL && cur_ddo1->L != 0)) {
-                /* One of the tests was true */
-                cur_ddo1->PC += 1;
-        } else if (((instruction & GROUP2_SMA) == GROUP2_SMA && (int16_t) cur_ddo1->AC >= 0) ||
-                   ((instruction & GROUP2_SZA) == GROUP2_SZA && cur_ddo1->AC != 0) ||
-                   ((instruction & GROUP2_SNL) == GROUP2_SNL && cur_ddo1->L == 0)) {
-                /* One of the tests was not true, do nothing */
-        } else if ((instruction & GROUP2_SKP) == GROUP2_SKP) {
-                cur_ddo1->PC += 1;
+                }
         }
 
-        /* If CLA is called, the AC is cleared after logical tests */
+        /* If CLA was called, the AC is cleared after logical tests */
         if ((instruction & GROUP2_CLA) == GROUP2_CLA) cur_ddo1->AC = 0;
         /* I am not going to implement the OSR operation ... at least not yet *
            because it is a "front panel" operation and.. yeah.. you get it    */

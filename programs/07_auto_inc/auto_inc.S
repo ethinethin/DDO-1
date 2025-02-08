@@ -6,26 +6,25 @@
 ;;;;
         START   2048
         CLA
-        TAD     hello           ; store address in hello in auto-increment
-                                ; register
-        DCA     16
+        TAD     hello           ; store address of hello in auto-increment
+        DCA     16              ;   register at memory location 16
 loop,
         TAD     (16)            ; address in 16 will auto-increment before this
-                                ; operation
+                                ;   operation
         SNA                     ; skip if accumulator != 0, otherwise end
-        JMP     finished
+        JMP     reset           ; reset string position when finished outputting
         JMS     ttyo            ; send to ttyo subroutine and loop
         JMP     loop
-finished,
-        CLA
-        TAD     hello
+reset,
+        CLA                     ; re-store address of hello in auto-increment
+        TAD     hello           ;   register at memory location 16
         DCA     16
-        JMP     loop
+        JMP     loop            ; re-enter loop
 ttyo,           0               ; output to TTY device - need to implement in
-                                ; simulator and assembler - so this is currently
-                                ; a placeholder subroutine
+                                ;   simulator and assembler - so this is
+                                ;   currently a placeholder subroutine
         CLA
-        JMP     (ttyo)
+        JMP     (ttyo)          ; return from subroutine
 hello,          .
         72 101 108 108          ; ASCII: 'H' 'e' 'l' 'l'
         111 44 32 87            ; ASCII: 'o' ',' ' ' 'W'

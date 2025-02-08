@@ -25,41 +25,49 @@ Comments can occur anywhere and are denoted by the character `;`. Any characters
 
 `START` is used at the very beginning of every assembly file and END is used at the end. For `START`, specify the memory location that assembly should begin, e.g.:
 
-    START           0               ; Start at memory location 0 (memory location 0 of page 0)
-    START           2048            ; Start at memory location 2048 (memory location 0 of page 1)
+            START   0               ; Start at memory location 0 (memory location 0 of page 0)
+            START   2048            ; Start at memory location 2048 (memory location 0 of page 1)
 
 END is used to signify that assembly is finished. You can include documentation or commentary below this keyword, because nothing after it will be assembled.
 
 ### Padding with 0s
 
-`PAD` and `PPD` (page pad) are used to pad zeroes. `PAD` is given a number, to specify how many zeroes are padded, while `PPD` stands alone and means "pad to the next page." For example:
+`PAD` and `PPD` (page pad) are used to pad sections of memory with zeroes. `PAD` is used with a value to specify how many words of memory to pad with zeroes, while `PPD` is a stand-alone operation that pads the current page with zeroes, ensuring the next word starts on the first word of the next page. For example:
 
-    START           0               ; Start at memory location 0 (memory location 0 of page 0)
-    PAD             100             ; pad with 100 zeroes (memory locations 0-99)
-    CLA                             ; this instruction is in memory location 100
-    PPD                             ; pad with zeroes until the next page
-    CLA                             ; this instruction is in memory location 2048
+            START   0               ; Start at memory location 0 (memory location 0 of page 0)
+            PAD     100             ; pad with 100 zeroes (memory locations 0-99)
+            CLA                     ; this instruction is in memory location 100
+            PPD                     ; pad with zeroes until the next page
+            CLA                     ; this instruction is in memory location 2048
 
 ### Labels
 
 Labels are specified with a comma. Lowercase is preferred for labels, and they can be declared in two ways: (1) with a value (to specify the value be stored at the address of the label), (2) with another label to specify the address of that label, (3) with a . to indicate the self-address of the label, or (4) on a line by itself, indicating the label's address me the memory location of the next instruction. Examples:
 
     var1,           0               ; Store the value 0, var1 refers to this memory location
-    var2,           var1            ; Store the address of var1 in var2 (*** NOT YET IMPLEMENTED ***)
+    var2,           var1            ; Store the address of var1 in var2
     var3,           .               ; Store the address of var3 in var3
-    loop,                           ; A label likely used as a loop point
+    loop,                           ; A label likely used as a loop point, refers to the address of the next word
 
-At assembly time, labels are converted into memory addresses. Label names are lost in the assembled binary.
+At assembly time, labels are converted into memory addresses, with label names lost in the assembled binary.
 
-### Naked values
+**Important note: labels cannot be combined with operations.**
 
-Naked values can be provided either one with a label or up to four per line. Examples:
+    bad,    CLA                     ; this is invalid
+
+It will be interpreted as the numeric value of the operation, so the above will be interpreted as:
+
+    bad,            0               ; the value 0 stored at the address specified by the label bad
+
+### Raw values
+
+Raw values can be provided either one with a label or up to four per line. Examples:
 
     var1,           0               ; Store value 0, var1 refers to this memory location
             10 20 30 40             ; The values 10, 20, 30, 40 stored sequentially at this location
             50 60                   ; The values 50, 60 stored sequentially here
 
-This works well for storing strings with a self-addressed label to be used via auto-increment registers, e.g.:
+This works well for storing strings with a self-addressed label (to be used via auto-increment registers), e.g.:
 
     hello,          .               ; hello contains the address of itself
             72 101 108 108          ; ASCII: 'H' 'e' 'l' 'l'
@@ -67,7 +75,7 @@ This works well for storing strings with a self-addressed label to be used via a
             111 114 108 100         ; ASCII: 'o' 'r' 'l' 'd'
             33 10 0                 ; ASCII: '!' '\n' NUL
 
-Stylistically, naked values after a label should be in column 3 (the "Values/Operands" column) while naked values by themselves should be in column 2 (the "operations" column, or starting at character 8 of the line). This is mainly to allow room between the values and the comments column.
+Stylistically, raw values after a label should be in column 3 (the "Values/Operands" column) while raw values by themselves should be in column 2 (the "operations" column, or starting at character 8 of the line). This is mainly to allow room between the values and the comments column.
 
 ### Op codes and indirection
 
@@ -80,7 +88,7 @@ The memory reference instruction (MRI) opcodes are given an operand: either a nu
 |ISZ|increment value at address and skip next instruction if result is 0|
 |DCA|store AC in address, clear AC|
 |JMP|jump to address|
-|JMS|jump to subroutine|
+|JMS|jump to subroutine (return address stored at word 0 of subroutine, execution begins at word 1)|
 
 The instruction acts on the value stored in memory at that address. If parenthesis are used around the address/label, then the instruction acts on the value stored in memory at the address stored in that memory location instead (indirection). Examples:
 
@@ -94,7 +102,20 @@ Memory locations in assembly are absolute, not relative. Therefore:
             JMP     0               ; jump to page 0, memory location 0 (valid on all pages)
             JMP     2048            ; jump to page 1, memory location 0 (only valid on page 1)
 
-If an instruction on the last word of a page is executed, execution will continue on the next page. Subroutines should not span two pages, or the return address will be inaccessible.
+If an instruction on the last word of a page is executed, execution will continue onto the next page. Subroutines should not span two pages, or the return address will be inaccessible without purposefully used indirection (i.e. storing word 0 of the subroutine in a location on the next page). To avoid this issue, and if memory allows, it is a good practice to pad to the end of the current page and start the subroutine on a new page.
+
+    ; somewhere late on page 1
+            CLA CLL
+            TAD     var1            ; load value into AC
+            JMS     (nega_loc)      ; indirectly call the make_nega subroutine
+            HLT
+    var1,           0
+    nega_loc,       make_nega
+            PPD                     ; pad to page 2
+    ; page 2
+    make_nega,      0               ; subroutine to multiply AC by -1
+            CMA IAC                 ; complement and add 1
+            JMP     (make_nega)     ; return to caller
 
 Lastly, memory locations 16 through 31 of page 0 are the auto-increment registers. If indirection is used with one of these memory locations, the value contained within is incremented before the operation.
 

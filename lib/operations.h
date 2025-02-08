@@ -43,6 +43,7 @@
 #define GROUP2_SMA              0b1111010000000000
 #define GROUP2_SZA              0b1111001000000000
 #define GROUP2_SNL              0b1111000100000000
+#define GROUP2_LOGIC2           0b1111000010000000
 #define GROUP2_SKP              0b1111000010000000
 #define GROUP2_SPA              0b1111010010000000
 #define GROUP2_SNA              0b1111001010000000
