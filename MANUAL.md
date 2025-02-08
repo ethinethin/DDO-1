@@ -47,3 +47,10 @@ There are six memory reference instructions (MRIs). These must all specify an ad
 
 ...
 this is a work in progress, working on adapting my PDP-8 notes to here, also to describe the new features of the DDO-1 vs. the PDP-8
+
+Need to document this somewhere: information about hardware devices. IOT commands are specified by the 110 op code, so the instruction will be:
+
+110DDDDDDIIIIIII
+
+- D = device (up to 64 devices supported)
+- I = instruction (up to 128 instructions supported)

@@ -57,6 +57,11 @@
 /* definitions for byte swapping */
 #define BSW_LOWERBYTE           0b0000000011111111
 #define BSW_SHIFT               8
+/* definitions for interrupts */
+#define BITMASK_INTS_ON         0b1100000000000001
+#define BITMASK_INTS_OFF        0b1100000000000010
+/* definitions for hardware */
+#define BITMASK_DEVICES         0b0001111110000000
 
 /* function prototypes */
 extern void     execute(struct ddo1 *cur_ddo1, WORDTYPE instruction);

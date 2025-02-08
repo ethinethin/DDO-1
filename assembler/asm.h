@@ -20,6 +20,17 @@ struct opcodes {
 };
 int N_OPCODES = 6;
 
+struct opcodes IOT_CODES[] = {
+        { "TSF", 0b0000001000000001 },
+        { "TCF", 0b0000001000000010 },
+        { "TPC", 0b0000001000000100 },
+        { "TLS", 0b0000001000000110 },
+        { "KSF", 0b0000000110000001 },
+        { "KCC", 0b0000000110000010 },
+        { "KRS", 0b0000000110000100 }
+};
+int N_IOT_CODES = 7;
+
 struct opcodes GROUP1_OPRS[] = {
         { "CLA", 0b1110100000000000 }, 
         { "CLL", 0b1110010000000000 }, 

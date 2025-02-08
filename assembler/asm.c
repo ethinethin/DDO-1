@@ -22,6 +22,7 @@ uint16_t        fix_page(uint16_t address);
 void            handle_group1_opr(char *word[4]);
 void            handle_group2_opr(char *word[4]);
 void            handle_label(char *word);
+uint16_t        handle_values(char *word[4]);
 int             is_label(char *word);
 void            output_binary(void);
 
@@ -216,28 +217,38 @@ parse_instructions(FILE *f)
         while (fgets(buf, 1024, f) != NULL) {
                 /* Tokenize the line */
                 tokenize_line(buf, word);
-                /* Break if end, or skip if empty line or comment */
-                if (strncmp("END", buf, 3) == 0) return;
-                if (word[0] == NULL) continue;
+                /* Go to next line if first word is NULL or START */
+                if (word[0] == NULL || strncmp("START", word[0], 5) == 0) continue;
+                /* End if first word is END */
+                if (strncmp("END", word[0], 3) == 0) return;
                 if (strncmp("PAD", word[0], 3) == 0) {
                         /* Pad with 0s - just increase current memory location */
                         MEMLOC += atoi(word[1]);
                 } else if (strncmp("PPD", word[0], 3) == 0) {
+                        /* Pad until the next page */
                         MEMLOC = 2048 * (calc_page(MEMLOC) + 1);
                 } else if ((i = is_code(word[0], OPCODES, N_OPCODES)) >= 0) {
+                        /* If it's an opcode, pass the operand and opcode number */
                         handle_opcode(word[1], i);
                         MEMLOC += 1;
                 } else if ((i = is_code(word[0], GROUP1_OPRS, N_GROUP1_OPRS)) >= 0) {
+                        /* If the first word is a group1 microcode, handle them */
                         handle_group1_opr(word);
                         MEMLOC += 1;
                 } else if ((i = is_code(word[0], GROUP2_OPRS, N_GROUP2_OPRS)) >= 0) {
+                        /* If the first word is a group2 microcode, handle them */
                         handle_group2_opr(word);
                         MEMLOC += 1;
                 } else if ((i = contains_label(word[0])) != 0) {
+                        /* if it's a label, handle the second word if it exists */
                         if (word[1] != NULL) {
                                 handle_label(word[1]);
                                 MEMLOC += 1;
                         }
+                } else {
+                        /* It must be a naked value or values */
+                        MEMLOC += handle_values(word);
+                        
                 }
         }
 }
@@ -428,6 +439,18 @@ handle_label(char *word)
         } else {
                 MEMORY[MEMLOC] = (uint16_t) atoi(word);
         }
+}
+
+uint16_t
+handle_values(char *word[4])
+{
+        int i;
+
+        /* Parse up to four naked values on a line */
+        for (i = 0; i < 4 && word[i] != NULL; i += 1) {
+                MEMORY[MEMLOC + i] = (uint16_t) atoi(word[i]);
+        }
+        return i;
 }
 
 int

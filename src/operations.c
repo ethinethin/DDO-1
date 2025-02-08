@@ -152,9 +152,30 @@ INSTRUCTION_JMP(struct ddo1 *cur_ddo1, WORDTYPE address)
 static void
 INSTRUCTION_IOT(struct ddo1 *cur_ddo1, WORDTYPE instruction)
 {
-
+        WORDTYPE masked_instruction;
+        
+        /* mask out the instruction field */
+        masked_instruction = instruction & BITMASK_DEVICES;
+        /* Enable or disable interrupts */
+        if (instruction == BITMASK_INTS_ON) {
+                cur_ddo1->ints = INTS_ON;
+        } else if (instruction == BITMASK_INTS_OFF) {
+                cur_ddo1->ints = INTS_OFF;
+        } else if ((masked_instruction & TTY_P_DEVICE) == TTY_P_DEVICE && (instruction & ~TTY_P_DEVICE) == 0) {
+                // call ttyp handler
+        } else if ((masked_instruction & TTY_K_DEVICE) == TTY_K_DEVICE && (instruction & ~TTY_K_DEVICE) == 0) {
+                // call ttyk handler
+        }
 }
 
+/* All these bitmasks work for now but I am a little worried about mutual *
+ * exclusivity, especially in the group2 function; I added a whole bunch  *
+ * of extra logic that isn't necessary to prevent incorrect bitmasking..  *
+ * But what I can do instead is this:                                     *
+ *      (instruction & MASK) == MASK && (instruction & ~MASK) == 0        *
+ * This ensures the mask matches exactly so there's no, I dunno, "bleed   *
+ * through" to other bitmasks. But the microcodes are a little hard.. I   *
+ * will need to think of a better way to do this...                       */
 static void
 INSTRUCTION_OPR(struct ddo1 *cur_ddo1, WORDTYPE instruction)
 {
@@ -216,26 +237,21 @@ OPR_GROUP2_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
             ((instruction & GROUP2_SZL) == GROUP2_SZL && cur_ddo1->L == 0)) {
                 /* One of the tests was true */
                 cur_ddo1->PC += 1;
-                return;
         } else if (((instruction & GROUP2_SPA) == GROUP2_SPA && (int16_t) cur_ddo1->AC < 0) ||
             ((instruction & GROUP2_SNA) == GROUP2_SNA && cur_ddo1->AC == 0) ||
             ((instruction & GROUP2_SZL) == GROUP2_SZL && cur_ddo1->L != 0)) {
-                /* One of the tests was not true true */
-                return;
+                /* One of the tests was not true true, do nothing */
         } else if (((instruction & GROUP2_SMA) == GROUP2_SMA && (int16_t) cur_ddo1->AC < 0) ||
                    ((instruction & GROUP2_SZA) == GROUP2_SZA && cur_ddo1->AC == 0) ||
                    ((instruction & GROUP2_SNL) == GROUP2_SNL && cur_ddo1->L != 0)) {
                 /* One of the tests was true */
                 cur_ddo1->PC += 1;
-                return;
         } else if (((instruction & GROUP2_SMA) == GROUP2_SMA && (int16_t) cur_ddo1->AC >= 0) ||
                    ((instruction & GROUP2_SZA) == GROUP2_SZA && cur_ddo1->AC != 0) ||
                    ((instruction & GROUP2_SNL) == GROUP2_SNL && cur_ddo1->L == 0)) {
-                /* One of the tests was not true */
-                return;
+                /* One of the tests was not true, do nothing */
         } else if ((instruction & GROUP2_SKP) == GROUP2_SKP) {
                 cur_ddo1->PC += 1;
-                return;
         }
 
         /* If CLA is called, the AC is cleared after logical tests */

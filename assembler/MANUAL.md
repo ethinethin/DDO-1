@@ -2,7 +2,20 @@
 
 This is the manual for the DDO-1 assembler. This program and manual are works in progress, and are licensed under the same terms as the DDO-1 project to which they belong.
 
-## Reserved keywords
+## Programming in this assembly language
+
+### Style and whitespace
+
+For readability, each line should be broken up into 5 columns, each starting at a different 8-character tab-stop. The columns are:
+
+1. Labels, start at character 0
+2. Operations, start at character 8
+3. Values/Operands, start at character 16
+4. Comments, start at character 32
+
+The fourth column (starting at character 24) is left blank to leave room for longer operations/values.
+
+Whitespace, including both tabs and spaces, is ignored while assembling programs, so these are just style recommendations, not required.
 
 ### Comments
 
@@ -12,8 +25,8 @@ Comments can occur anywhere and are denoted by the character `;`. Any characters
 
 `START` is used at the very beginning of every assembly file and END is used at the end. For `START`, specify the memory location that assembly should begin, e.g.:
 
-    START 0         ; Start at memory location 0 (memory location 0 of page 0)
-    START 2048      ; Start at memory location 2048 (memory location 0 of page 1)
+    START           0               ; Start at memory location 0 (memory location 0 of page 0)
+    START           2048            ; Start at memory location 2048 (memory location 0 of page 1)
 
 END is used to signify that assembly is finished. You can include documentation or commentary below this keyword, because nothing after it will be assembled.
 
@@ -21,21 +34,40 @@ END is used to signify that assembly is finished. You can include documentation 
 
 `PAD` and `PPD` (page pad) are used to pad zeroes. `PAD` is given a number, to specify how many zeroes are padded, while `PPD` stands alone and means "pad to the next page." For example:
 
-    START 0         ; Start at memory location 0 (memory location 0 of page 0)
-    PAD 100         ; pad with 100 zeroes (memory locations 0-99)
-    CLA             ; this instruction is in memory location 100
-    PPD             ; pad with zeroes until the next page
-    CLA             ; this instruction is in memory location 2048
+    START           0               ; Start at memory location 0 (memory location 0 of page 0)
+    PAD             100             ; pad with 100 zeroes (memory locations 0-99)
+    CLA                             ; this instruction is in memory location 100
+    PPD                             ; pad with zeroes until the next page
+    CLA                             ; this instruction is in memory location 2048
 
 ### Labels
 
-Labels are specified with a comma. Lowercase is preferred for labels, and they can be declared in two ways: (1) with a value (to specify the value be stored at the address of the label), or (2) on a line by itself, indicating the label's address me the memory location of the next instruction. Examples:
+Labels are specified with a comma. Lowercase is preferred for labels, and they can be declared in two ways: (1) with a value (to specify the value be stored at the address of the label), (2) with another label to specify the address of that label, (3) with a . to indicate the self-address of the label, or (4) on a line by itself, indicating the label's address me the memory location of the next instruction. Examples:
 
-    var1, 0         ; Store the value 0, var1 refers to this memory location
-    var2, var1      ; Store the address of var1 in var2 (*** NOT YET IMPLEMENTED ***)
-    loop,           ; A label likely used as a loop point
+    var1,           0               ; Store the value 0, var1 refers to this memory location
+    var2,           var1            ; Store the address of var1 in var2 (*** NOT YET IMPLEMENTED ***)
+    var3,           .               ; Store the address of var3 in var3
+    loop,                           ; A label likely used as a loop point
 
 At assembly time, labels are converted into memory addresses. Label names are lost in the assembled binary.
+
+### Naked values
+
+Naked values can be provided either one with a label or up to four per line. Examples:
+
+    var1,           0               ; Store value 0, var1 refers to this memory location
+            10 20 30 40             ; The values 10, 20, 30, 40 stored sequentially at this location
+            50 60                   ; The values 50, 60 stored sequentially here
+
+This works well for storing strings with a self-addressed label to be used via auto-increment registers, e.g.:
+
+    hello,          .               ; hello contains the address of itself
+            72 101 108 108          ; ASCII: 'H' 'e' 'l' 'l'
+            111 44 32 87            ; ASCII: 'o' ',' ' ' 'W'
+            111 114 108 100         ; ASCII: 'o' 'r' 'l' 'd'
+            33 10 0                 ; ASCII: '!' '\n' NUL
+
+Stylistically, naked values after a label should be in column 3 (the "Values/Operands" column) while naked values by themselves should be in column 2 (the "operations" column, or starting at character 8 of the line). This is mainly to allow room between the values and the comments column.
 
 ### Op codes and indirection
 
@@ -52,26 +84,26 @@ The memory reference instruction (MRI) opcodes are given an operand: either a nu
 
 The instruction acts on the value stored in memory at that address. If parenthesis are used around the address/label, then the instruction acts on the value stored in memory at the address stored in that memory location instead (indirection). Examples:
 
-    TAD 1000        ; add the value stored at address 1000 to the AC
-    TAD var1        ; add the value stored at the label var1 to the AC
-    TAD (1000)      ; add the value stored at the address in memory at address 1000
-    TAD (var1)      ; add the value stored at the address in memory at label var1
+            TAD     1000            ; add the value stored at address 1000 to the AC
+            TAD     var1            ; add the value stored at the label var1 to the AC
+            TAD     (1000)          ; add the value stored at the address in memory at address 1000
+            TAD     (var1)          ; add the value stored at the address in memory at label var1
 
 Memory locations in assembly are absolute, not relative. Therefore:
 
-    JMP 0           ; jump to page 0, memory location 0 (valid on all pages)
-    JMP 2048        ; jump to page 1, memory location 0 (only valid on page 1)
+            JMP     0               ; jump to page 0, memory location 0 (valid on all pages)
+            JMP     2048            ; jump to page 1, memory location 0 (only valid on page 1)
 
 If an instruction on the last word of a page is executed, execution will continue on the next page. Subroutines should not span two pages, or the return address will be inaccessible.
 
 Lastly, memory locations 16 through 31 of page 0 are the auto-increment registers. If indirection is used with one of these memory locations, the value contained within is incremented before the operation.
 
-    CLA
-    TAD var1        ; load the value contained at var1
-    DCA 16          ; store the value in auto-increment register
-    TAD (16)        ; load the value stored in the address at auto-increment register
-    HLT
-    var1, 2048
+            CLA
+            TAD     var1            ; load the value contained at var1
+            DCA     16              ; store the value in auto-increment register
+            TAD     (16)            ; load the value stored in the address at auto-increment register
+            HLT
+    var1,           2048
 
 In this code snippet, the value in the AC will be the value located at memory 2049.
 

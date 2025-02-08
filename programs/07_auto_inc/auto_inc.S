@@ -27,18 +27,8 @@ ttyo,           0               ; output to TTY device - need to implement in
         CLA
         JMP     (ttyo)
 hello,          .
-h,              72              ; ASCII 'H'
-e,              101             ; ASCII 'e'
-l1,             108             ; ASCII 'l'
-l2,             108             ; ASCII 'l'
-o1,             111             ; ASCII 'o'
-comma,          44              ; ASCII ','
-space,          32              ; ASCII -' '
-w,              87              ; ASCII 'w'
-o2,             111             ; ASCII 'o'
-r,              82              ; ASCII 'r'
-l3,             108             ; ASCII 'l'
-d,              100             ; ASCII 'd'
-newline,        10              ; ASCII '\n'
-end,            0               ; string terminator
+        72 101 108 108          ; ASCII: 'H' 'e' 'l' 'l'
+        111 44 32 87            ; ASCII: 'o' ',' ' ' 'W'
+        111 114 108 100         ; ASCII: 'o' 'r' 'l' 'd'
+        33 10 0                 ; ASCII: '!' '\n' NUL
         END
