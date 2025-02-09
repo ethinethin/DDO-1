@@ -1,5 +1,7 @@
 ddo1
 assembler/asm
+assembler/a.out
 .vscode/*
 .DS_Store
 */.DS_Store
+*/*/.DS_Store

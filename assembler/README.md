@@ -48,6 +48,6 @@ All keywords should be capitalized and all labels should be lowercase. Indirecti
     label3,         label1          ; label3 is an address containing the address of label1
             JMP     (label3)        ; jump to the address stored at label3 (i.e., label1)
 
-Using tab-stops of width 8, labels start in column 0, operations in column 2, operands in column 3, and comments in column 5. Naked values specified alone start in column 2, to allow space for comments.
+Using tab-stops of width 8, labels start in column 1, operations in column 2, operands in column 3, and comments in column 5. Naked values specified alone start in column 2, to allow space for comments.
 
 All of these style recommendations are optional but improve readability. The assembler ignores whitespace (tabs and spaces), except when used as a separator between words. See the examples in ../programs/ for source code examples written in the formatting recommendations style. 

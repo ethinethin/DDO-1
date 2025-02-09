@@ -36,7 +36,12 @@ struct ddo1 {
         uint8_t ints;
         struct tty_printer {
                 uint8_t flag;
-        } ttyp_printer;
+        } tty_printer;
+        struct tty_keyboard {
+                uint8_t flag;
+                uint8_t n_key;
+                int key[20];
+        } tty_kbd;
 };
 
 /* function prototypes */
@@ -44,5 +49,7 @@ extern struct ddo1 *    init_ddo1(void);
 extern void             kill_ddo1(struct ddo1 *cur_ddo1);
 extern void             TTY_P_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction);
 extern void             TTY_K_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction);
+extern void             keypressed(struct ddo1 *cur_ddo1, int keycode);
+extern void             keyreleased(struct ddo1 *cur_ddo1, int keycode);
 
 #endif

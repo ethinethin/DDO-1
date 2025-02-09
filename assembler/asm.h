@@ -27,9 +27,10 @@ struct opcodes IOT_CODES[] = {
         { "TLS", 0b1100001000000110 },
         { "KSF", 0b1100000110000001 },
         { "KCC", 0b1100000110000010 },
-        { "KRS", 0b1100000110000100 }
+        { "KRS", 0b1100000110000100 },
+        { "KRB", 0b1100000110000110 }
 };
-int N_IOT_CODES = 7;
+int N_IOT_CODES = 8;
 
 struct opcodes GROUP1_OPRS[] = {
         { "CLA", 0b1110100000000000 }, 

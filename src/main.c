@@ -8,7 +8,7 @@
 #include "operations.h"
 
 /* Render every X operations */
-#define RENDER_EVERY 1
+#define RENDER_EVERY 5
 
 /* Function prototypes */
 static struct sdl2_session *	init_sdl2(int w, int h, const char *name);
@@ -62,6 +62,11 @@ main(int argc, char *argv[])
 				cur_sdl2->running = SDL_FALSE;
 				break;
 			}
+			/* Add to key queue */
+			keypressed(cur_ddo1, event.key.keysym.sym);
+		} else if (event.type == SDL_KEYUP) {
+			/* Remove from key queue */
+			keyreleased(cur_ddo1, event.key.keysym.sym);
 		}
 	}
 	/* Kill current computer and sdl2 session */
