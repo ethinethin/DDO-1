@@ -23,7 +23,6 @@ get_k_l,
         DCA     (16)
         JMP     (get_k)
 output_k,       0
-        CLA
         TAD     cur_char        ; load character to print out
 output_k_l,
         TSF                     ; wait until printer is ready
@@ -31,15 +30,13 @@ output_k_l,
         TLS                     ; print out character
         JMP     (output_k)
 was_newline,    0
-        CLA
-        TAD     newline         ; convert newline character to negative
-        CMA IAC
-        TAD     cur_char        ; add to the current character
-        SZA                     ; if it is zero, newline was entered
+        CMA IAC                 ; make negative and add newline
+        TAD     newline
+        SZA                     ; if the sum is zero, newline was entered
         JMP     (was_newline)   ; it was not zero, return to loop
-        JMP     print_buf       
+        DCA     (16)            ; put in a string terminator at the end of the
+        JMP     print_buf       ;   buffer
 print_buf,
-        CLA
         TAD     buffer          ; store the address of buffer in the auto-
         DCA     16              ;   increment register at memory address 16
 print_buf_loop,
@@ -51,32 +48,11 @@ print_buf_loop,
         JMS     output_k        ;   subroutine
         JMP     print_buf_loop  ; loop until done
 done,
-        JMS     clear_buffer    ; clear the buffer
-        CLA
         TAD     buffer          ; store address of buffer at auto-increment
         DCA     16              ;   register at memory location 16
         JMP     loop            ; re-enter the main loop
-clear_buffer,   0
-        CLA
-        DCA     counter         ; zero out counter
-        TAD     buffer          ; put buffer location into auto-increment reg
-        DCA     16
-clear_buffer_l,
-        CLA
-        DCA     (16)            ; put 0 in buffer location
-        ISZ     counter         ; increment counter and ignore skip
-        NOP
-        TAD     buf_size        ; check if counter == buf_size
-        CMA IAC
-        TAD     counter
-        SZA                     ; skip if zero (counter == buf_size)
-        JMP     clear_buffer_l  ; not done yet, loop
-        JMP     (clear_buffer)  ; done, re-enter main loop
 cur_char,       0
 newline,        10
-counter,        0
-buf_size,       80
 buffer,         .
         PAD     80              ; make a buffer with 80 zeroes
         END
-        
