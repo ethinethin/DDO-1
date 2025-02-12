@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 
 struct sdl2_session {
-	struct {
+	struct display {
 		int w;
 		int h;
 		const char *name;

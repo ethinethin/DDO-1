@@ -8,7 +8,7 @@
 #include "operations.h"
 
 /* Render every X operations */
-#define RENDER_EVERY 10
+#define RENDER_EVERY 50
 
 /* Function prototypes */
 static struct sdl2_session *	init_sdl2(int w, int h, const char *name);
@@ -26,7 +26,7 @@ main(int argc, char *argv[])
 	uint16_t instruction;
 	
 	/* Set up current sdl2 session */
-	cur_sdl2 = init_sdl2(1280, 720, "DDO-1");
+	cur_sdl2 = init_sdl2(800, 200, "DDO-1");
 	/* Set up the current computer */
 	cur_ddo1 = init_ddo1();
 	/* Try to load memory from the file - this will activate the computer */

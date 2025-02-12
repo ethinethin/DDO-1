@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include "colors.h"
 #include "hardware.h"
 
 /* function prototypes */
@@ -31,6 +32,13 @@ init_ddo1(void)
         for (i = 0; i < 10; i += 1) {
                 cur_ddo1->tty_kbd.key[i] = 0;
         }
+        /* Initialize monitor - set text mode, zero out display, and init colors */
+        cur_ddo1->monitor.mode = MON_TEXTMODE;
+        for (i = 0; i < MON_IMAGESIZE; i += 1) {
+                if (i < MON_TEXTSIZE) cur_ddo1->monitor.text[i] = 0;
+                cur_ddo1->monitor.image[i] = 0;
+        }
+        cur_ddo1->monitor.colors = DDO1_COLORS;
         return cur_ddo1;
 }
 

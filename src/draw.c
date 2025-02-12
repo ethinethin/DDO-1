@@ -42,7 +42,7 @@ draw_render(struct sdl2_session *cur_sdl2)
 static void
 draw_panel(struct sdl2_session *cur_sdl2, struct ddo1 *cur_ddo1)
 {
-        draw_rect_line(cur_sdl2, 20, 20, 1240, 680, WHITE);
+        draw_rect_line(cur_sdl2, 20, 20, 760, 160, WHITE);
         draw_register(cur_sdl2, cur_ddo1->PC, 40, 40);
         draw_L(cur_sdl2, cur_ddo1->L, 40, 80);
         draw_register(cur_sdl2, cur_ddo1->AC, 80, 80);
