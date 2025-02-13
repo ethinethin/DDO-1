@@ -7,9 +7,9 @@
         START   2048
         CLA
         TAD     hello           ; store address of hello in auto-increment
-        DCA     16              ;   register at memory location 16
+        DCA     17              ;   register at memory location 17
 loop,
-        TAD     (16)            ; address in 16 will auto-increment before this
+        TAD     (17)            ; address in 17 will auto-increment before this
                                 ;   operation
         SNA                     ; skip if accumulator != 0, otherwise end
         JMP     reset           ; reset string position when finished outputting
@@ -17,8 +17,8 @@ loop,
         JMP     loop
 reset,
         CLA                     ; re-store address of hello in auto-increment
-        TAD     hello           ;   register at memory location 16
-        DCA     16
+        TAD     hello           ;   register at memory location 17
+        DCA     17
         JMP     loop            ; re-enter loop
 ttyo,           0               ; output to TTY printer - wait until device is
 ttyo_l,                         ;   ready, then print out character and clear AC

@@ -9,7 +9,7 @@
 #include "operations.h"
 
 /* Render every X operations */
-#define RENDER_EVERY 6000
+#define RENDER_EVERY 10
 
 /* Function prototypes */
 static struct sdl2_session *	init_sdl2(int panel_w, int panel_h, const char *panel_name, int mon_w, int mon_h, const char *mon_name);

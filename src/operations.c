@@ -73,7 +73,7 @@ real_address(struct ddo1 *cur_ddo1, uint8_t indirect, uint8_t page, WORDTYPE ope
         /* If we are accessing a memory location within 16 to 31 on page 0 indirectly, *
          * we are accessing an auto-increment register, so it should be incremented    *
          * before determining the address                                              */
-        if (indirect == 1 && page == 0 && operand >= 16 && operand <= 16) {
+        if (indirect == 1 && page == 0 && operand >= 16 && operand <= 31) {
                 cur_ddo1->memory[operand] += 1;
         }
         /* Are we using page zero or current page? */
@@ -246,8 +246,8 @@ OPR_GROUP2_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
                 if (((instruction & GROUP2_SMA) == GROUP2_SMA && (int16_t) cur_ddo1->AC < 0) ||
                     ((instruction & GROUP2_SZA) == GROUP2_SZA && cur_ddo1->AC == 0) ||
                     ((instruction & GROUP2_SNL) == GROUP2_SNL && cur_ddo1->L != 0)) {
-                /* One of the tests was true */
-                cur_ddo1->PC += 1;
+                        /* One of the tests was true */
+                        cur_ddo1->PC += 1;
                 }
         }
 
