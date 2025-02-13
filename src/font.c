@@ -1,5 +1,4 @@
 #include <SDL2/SDL.h>
-#include "colors.h"
 #include "font.h"
 #include "main.h"
 
@@ -47,13 +46,19 @@ unload_font(struct sdl2_session *cur_sdl2)
 }
 
 void
-draw_char(struct sdl2_session *cur_sdl2, int x, int y, int letter, int color)
+draw_char(struct sdl2_session *cur_sdl2, int x, int y, int letter, uint8_t color)
 {
 	SDL_Rect rect = { x, y, FONT_WIDTH * FONT_SCALE_X, FONT_HEIGHT * FONT_SCALE_Y };
+	uint8_t r, g, b;
         /* Adjust to correct character from ASCII */
         letter = convert_letter(letter);
+	/* Translate 8-bit color */
+	r = ((0b11100000 & color) >> 5) * 32;
+	g = ((0b00011100 & color) >> 2) * 32;
+	b = ((0b00000011 & color) >> 0) * 64;
+	
         /* Change color, render, then change color back */
-        SDL_SetTextureColorMod(cur_sdl2->font[letter], DDO1_COLORS[color].R, DDO1_COLORS[color].G, DDO1_COLORS[color].B);
+        SDL_SetTextureColorMod(cur_sdl2->font[letter], r, g, b);
 	SDL_RenderCopyEx(cur_sdl2->monitor.renderer, cur_sdl2->font[letter], NULL, &rect, 0, NULL, 0);
         SDL_SetTextureColorMod(cur_sdl2->font[letter], 255, 255, 255);
 }

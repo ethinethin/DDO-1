@@ -53,30 +53,24 @@ The monitor device is for outputting text or images to a graphical user display 
 
 ### Monitor Commands Table
 
-|Binary|Mnemonic|Short for|Note|Mode|
-|---|---|---|---|---|
-|1100010100000001|VSW|Video Swap|Swap video mode|Any|
-|1100010100000010|VIC|Video Insert Character|Insert character at cursor location|Text|
-|1100010100000100|VMC|Video Move Cursor|Move cursor or pixel pointer|Any|
-|1100010100001000|VDP|Video Draw Pixel|Change color at pixel pointer|Video|
-|1100010100010000|VCR|Video Color Red|Change custom color red|Any|
-|1100010100100000|VCG|Video Color Green|Change custom color green value|Any|
-|1100010101000000|VCB|Video Color Blue|Change custom color blue value|Any|
-|1100010101100000|VCC|Video Color Cyan|Change custom color green and blue values|Any|
-|1100010101010000|VCM|Video Color Magenta|Change custom color red and blue values|Any|
-|1100010100110000|VCY|Video Color Yellow|Change custom color red and green values|Any|
-|1100010101110000|VCK|Video Color Black|Change custom color red, green, and blue values|Any|
+|Binary|Mnemonic|Short for|Note|
+|---|---|---|---|
+|1100010100000001|VSF|Video Skip if Flag|Skip if flag is set|
+|1100010100000010|VMS|Video Mode Set|Change current video mode|
+|1100010100000100|VRC|Video Render Color|Change current color|
+|1100010100001000|VMC|Video Move Cursor|Move the location of the text/drawing cursor|
+|1100010100010000|VDC|Video Draw at Cursor|Output character or pixel at cursor location|
 
-All of these are pretty straight forward, but some of them use high order and low order bits to do the work:
+These are pretty straight forward, but how they work is described below.
 
 ### Monitor Commands Explained
 
-1. VSW - simply changes between video modes; the monitor begins in text mode; text mode is made up of 80 columns and 25 rows, while video mode is 240x160 (WxH) 
-2. VIC (text mode only) - insert a character, specified by the AC, at current cursor location; lower order byte = character, higher order byte = color
-3. VMC - move the cursor or pixel pointer to location specified by the AC; lower order byte = x, higher order byte = y
-4. VDP (video mode only) - change color at current pixel pointer to the color number specified by the AC
-5. VCR/VCG/VCB - change the red, green, or blue values of the custom color specified by the AC; lower order byte = color value, higher order byte = custom color to change (e.g. 0 would change the first custom color, which is color preset 32)
-6. The other color changing commands are combinations of the colors; while specified by mnemonics for the assembler, they are actually microcodes of the other color change operations
+1. VSF - skips the next command if the monitor ready flag is set. When the monitor can receive input, the ready flag will be enabled. If the flag is enabled, this operation will skip the next operation.
+2. VMS - sets the display mode. The monitor begins in text mode. When this operation executes, it will change the display mode to text mode (if AC = 0) or image mode (if AC != 0). When switching video modes, the device is re-initialized, clearing the contents of the screen. So calling a "switch to text mode" when already in text mode is a fast way to clear the screen, etc.
+3. VRC - sets the current drawing color. This switches the current drawing color using the contents of the AC. The color format used is RGB332 (i.e. 3-bits for red, 3-bits for green, and 2-bits for blue).
+4. VDC - this draws at the current cursor location. If in text mode, the 8-bit ASCII character in the lower byte of the AC will be drawn at the cursor location, in the color specified by VSC. If in image mode, a pixel will be drawn at the current pixel location. After the operation, the cursor location will be increased by one. 
+5. VMC - move the cursor or pixel pointer to location specified by the AC; lower order byte = x, higher order byte = y
+
 
 # Self-notes, please ignore
 

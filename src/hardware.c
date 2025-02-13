@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
-#include "colors.h"
 #include "hardware.h"
 
 /* function prototypes */
 static int      shift_fix(int keycode);
+static void     clear_monitor(struct ddo1 *cur_ddo1);
+static void     scroll_text(struct ddo1 *cur_ddo1);
 
 struct ddo1 *
 init_ddo1(void)
@@ -32,14 +33,12 @@ init_ddo1(void)
         for (i = 0; i < 10; i += 1) {
                 cur_ddo1->tty_kbd.key[i] = 0;
         }
-        /* Initialize monitor - set text mode, zero out display, and init colors */
+        /* Initialize monitor - set flag, set text mode, default color white, zero out display */
+        cur_ddo1->monitor.flag = 1;
         cur_ddo1->monitor.mode = MON_TEXTMODE;
         cur_ddo1->monitor.cursor = 0;
-        for (i = 0; i < MON_IMAGESIZE; i += 1) {
-                if (i < MON_TEXTSIZE) cur_ddo1->monitor.text[i] = 0;
-                cur_ddo1->monitor.image[i] = 0;
-        }
-        cur_ddo1->monitor.colors = DDO1_COLORS;
+        cur_ddo1->monitor.color = 0b11111111;
+        clear_monitor(cur_ddo1);
         return cur_ddo1;
 }
 
@@ -113,7 +112,9 @@ keypressed(struct ddo1 *cur_ddo1, int keycode)
         if (LSHIFT == 1 || RSHIFT == 1) {
                 keycode = shift_fix(keycode);
         }
-        if (keycode == '\r') keycode = '\n';
+        if (keycode == '\r') {
+                keycode = '\n';
+        }
 
         /* Make sure not over the keypress limit */
         if (cur_ddo1->tty_kbd.n_key >= 20) return;
@@ -202,32 +203,33 @@ void
 MON_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
 {
         uint8_t x, y;
-        /* Swap video mode - can't be combined with other operations */
-        if ((instruction & MON_VSW) == MON_VSW) {
-                if (cur_ddo1->monitor.mode == MON_TEXTMODE) {
-                        cur_ddo1->monitor.mode = MON_IMAGEMODE;
-                } else {
+
+        /* Video swap if flag - not combined with other commands */
+        if ((instruction & MON_VSF) == MON_VSF) {
+                if (cur_ddo1->monitor.flag == 1) cur_ddo1->PC += 1;
+                return;
+        }
+
+        /* Video mode set - not combined with other commands */
+        if ((instruction & MON_VMS) == MON_VMS) {
+                if (cur_ddo1->AC == 0) {
                         cur_ddo1->monitor.mode = MON_TEXTMODE;
+                } else {
+                        cur_ddo1->monitor.mode = MON_IMAGEMODE;
                 }
+                /* Always clear monitor, even if mode didn't change */
+                clear_monitor(cur_ddo1);
                 return;
         }
 
-        /* Insert character at cursor location - only in text mode and don't combine with other operations */
-        if ((instruction & MON_VIC) == MON_VIC) {
-                if (cur_ddo1->monitor.mode == MON_IMAGEMODE) {
-                        fprintf(stderr, "*** Error: program tried to write character while in image mode\n");
-                        return;
-                }
-                cur_ddo1->monitor.text[cur_ddo1->monitor.cursor] = cur_ddo1->AC;
-                cur_ddo1->monitor.cursor += 1;
-                if (cur_ddo1->monitor.cursor > (80 * 25)) {
-                        // future: scroll all values
-                        cur_ddo1->monitor.cursor = 0;
-                }
+        /* Video render color - not combined with other commands */
+        if ((instruction & MON_VRC) == MON_VRC) {
+                /* Set the render color to the lower order byte of the AC */
+                cur_ddo1->monitor.color = 0xFF & cur_ddo1->AC;
                 return;
         }
 
-        /* Move cursor or pixel pointer - must be within bounds of current mode; lower order byte = x, higher = y */
+        /* Video move cursor - not combined with other commands; x = lower order byte, y = higher order byte */
         if ((instruction & MON_VMC) == MON_VMC) {
                 x = cur_ddo1->AC & 0xFF;
                 y = (cur_ddo1->AC >> 8) & 0xFF;
@@ -249,16 +251,58 @@ MON_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
                 }
         }
 
-        /* Draw pixel at current pixel pointer - must be in video mode; pixel cursor does not move like text */
-        if ((instruction & MON_VDP) == MON_VDP) {
+        /* Video draw at cursor - not combined with other commands  */
+        if ((instruction & MON_VDC) == MON_VDC) {
                 if (cur_ddo1->monitor.mode == MON_TEXTMODE) {
-                        fprintf(stderr, "*** Error: program tried to draw pixel while in text mode\n");
-                        return;
+                        /* Was it a newline or backspace? */
+                        if ((0xFF & cur_ddo1->AC) == '\n') {
+                                /* If you're on the first character of the line, increment so we can get a newline */
+                                if (cur_ddo1->monitor.cursor % 80 == 0) cur_ddo1->monitor.cursor += 1;
+                                while (cur_ddo1->monitor.cursor % 80 != 0) cur_ddo1->monitor.cursor += 1;
+                        } else if ((0xFF & cur_ddo1->AC) == '\b') {
+                                if (cur_ddo1->monitor.cursor % 80 != 0) {
+                                        cur_ddo1->monitor.cursor -= 1;
+                                        cur_ddo1->monitor.text[cur_ddo1->monitor.cursor] = 0;
+                                }
+                        } else {
+                                /* Set high order byte to render color and lower order byte to lower order byte of AC */
+                                cur_ddo1->monitor.text[cur_ddo1->monitor.cursor] = (0xFF & cur_ddo1->AC) | (cur_ddo1->monitor.color << 8);
+                                /* Increment cursor */
+                                cur_ddo1->monitor.cursor += 1;
+                        }
+                        /* Do you need to scroll up to the next line? */
+                        if (cur_ddo1->monitor.cursor >= (80 * 25)) scroll_text(cur_ddo1);
+                } else {
+                        /* Set high order byte to render color and lower order byte to lower order byte of AC */
+                        cur_ddo1->monitor.image[cur_ddo1->monitor.cursor] = (0xFF & cur_ddo1->AC) | (cur_ddo1->monitor.color << 8);
+                        /* Increment cursor */
+                        cur_ddo1->monitor.cursor += 1;
+                        /* Overflow cursor if necessary */
+                        if (cur_ddo1->monitor.cursor >= (240 * 160)) cur_ddo1->monitor.cursor = 0;
                 }
-                cur_ddo1->monitor.image[cur_ddo1->monitor.cursor] = cur_ddo1->AC;
         }
-        // VCR: video color red
-        // VCG: video color green
-        // VCB: video color blue
 }
 
+static void
+clear_monitor(struct ddo1 *cur_ddo1)
+{
+        int i;
+        for (i = 0; i < MON_IMAGESIZE; i += 1) {
+                if (i < MON_TEXTSIZE) cur_ddo1->monitor.text[i] = 0;
+                cur_ddo1->monitor.image[i] = 0;
+        }
+}
+
+static void
+scroll_text(struct ddo1 *cur_ddo1)
+{
+        int i;
+
+        /* Start at text position 80 and move everything -80, then clear out *
+         * the last 80 positions and adjust the cursor location              */
+        for (i = 80; i < (80 * 25); i += 1) {
+                cur_ddo1->monitor.text[i - 80] = cur_ddo1->monitor.text[i];
+                cur_ddo1->monitor.text[i] = 0;
+        }
+        cur_ddo1->monitor.cursor -= 80;
+}

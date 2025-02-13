@@ -12,6 +12,6 @@
 
 extern void     load_font(struct sdl2_session *cur_sdl2);
 extern void     unload_font(struct sdl2_session *cur_sdl2);
-extern void     draw_char(struct sdl2_session *cur_sdl2, int x, int y, int letter, int color);
+extern void     draw_char(struct sdl2_session *cur_sdl2, int x, int y, int letter, uint8_t color);
 
 #endif

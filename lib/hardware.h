@@ -2,7 +2,6 @@
 #define HARDWARE_H
 
 #include <stdint.h>
-#include "colors.h"
 
 /* definitions for computer properties - changing these may *
  * break the computer                                       */
@@ -32,13 +31,11 @@
 #define MON_TEXTMODE    0
 #define MON_IMAGEMODE   1
 #define MON_DEVICE      0b1100010100000000
-#define MON_VSW         0b1100010100000001
-#define MON_VIC         0b1100010100000010
-#define MON_VMC         0b1100010100000100
-#define MON_VDP         0b1100010100001000
-#define MON_VCR         0b1100010100010000
-#define MON_VCG         0b1100010100100000
-#define MON_VCB         0b1100010101000000
+#define MON_VSF         0b1100010100000001
+#define MON_VMS         0b1100010100000010
+#define MON_VRC         0b1100010100000100
+#define MON_VMC         0b1100010100001000
+#define MON_VDC         0b1100010100010000
 
 /* Struct for DDO-1 hardware */
 struct ddo1 {
@@ -57,11 +54,12 @@ struct ddo1 {
                 int key[20];
         } tty_kbd;
         struct monitor {
+                uint8_t flag;
                 uint8_t mode;
                 uint16_t cursor;
+                uint8_t color;
                 uint16_t text[MON_TEXTSIZE];
                 uint16_t image[MON_IMAGESIZE];
-                struct color *colors;
         } monitor;
 };
 

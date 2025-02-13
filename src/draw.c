@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <SDL2/SDL.h>
-#include "colors.h"
 #include "draw.h"
 #include "font.h"
 #include "hardware.h"
