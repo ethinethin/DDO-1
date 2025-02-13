@@ -219,6 +219,7 @@ MON_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
                 }
                 /* Always clear monitor, even if mode didn't change */
                 clear_monitor(cur_ddo1);
+                cur_ddo1->monitor.cursor = 0;
                 return;
         }
 

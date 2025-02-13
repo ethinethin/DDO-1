@@ -15,6 +15,7 @@ static void     draw_rect_fill(struct sdl2_session *cur_sdl2, int x, int y, int 
 static void     draw_rect_line(struct sdl2_session *cur_sdl2, int x, int y, int w, int h, uint8_t border[4]);
 static void     draw_text_mode(struct sdl2_session *cur_sdl2, struct ddo1 *cur_ddo1);
 static void     draw_image_mode(struct sdl2_session *cur_sdl2, struct ddo1 *cur_ddo1);
+static void     draw_pixel(struct sdl2_session *cur_sdl2, int x, int y, uint8_t color);
 
 /* colors */
 static uint8_t BLACK[4] = { 26, 26, 26, 255 };
@@ -118,7 +119,7 @@ draw_text_mode(struct sdl2_session *cur_sdl2, struct ddo1 *cur_ddo1)
         int color, letter; 
 
         for (i = 0; i < (80 * 25); i += 1) {
-                if (cur_ddo1->monitor.text[i] != 0) {
+                if ((0xFF & cur_ddo1->monitor.text[i]) != 0) {
                         color = (cur_ddo1->monitor.text[i] >> 8);
                         letter = 0xFF & cur_ddo1->monitor.text[i];
                         /* Convert flat array into 80 x 25 position, then scale to screen */
@@ -132,5 +133,33 @@ draw_text_mode(struct sdl2_session *cur_sdl2, struct ddo1 *cur_ddo1)
 static void
 draw_image_mode(struct sdl2_session *cur_sdl2, struct ddo1 *cur_ddo1)
 {
+        int i, x, y;
+        uint8_t color;
 
+        for (i = 0; i < (240 * 160); i += 1) {
+                if ((0xFF & cur_ddo1->monitor.image[i]) != 0) {
+                        color = (cur_ddo1->monitor.image[i] >> 8);
+                        /* Convert flat array into 240 x 160 position */
+                        x = i % 240;
+                        y = i / 240;
+                        draw_pixel(cur_sdl2, x, y, color);
+                }
+        }
+
+}
+
+static void
+draw_pixel(struct sdl2_session *cur_sdl2, int x, int y, uint8_t color)
+{
+        /* Pixels are 3.33 x 3.75 */
+        SDL_FRect rect = { x * 3.33, y * 3.75, 3.33, 3.75 };
+        uint8_t r, g, b;
+        /* Set color */	
+	r = ((0b11100000 & color) >> 5) * 32;
+	g = ((0b00011100 & color) >> 2) * 32;
+	b = ((0b00000011 & color) >> 0) * 64;
+        SDL_SetRenderDrawColor(cur_sdl2->monitor.renderer, r, g, b, 255);
+        /* Draw pixel */
+        SDL_RenderFillRectF(cur_sdl2->monitor.renderer, &rect);
+        //printf("%d %d %u %u %u\n", x, y, r, g, b);
 }
