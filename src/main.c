@@ -2,16 +2,17 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include "draw.h"
+#include "font.h"
 #include "hardware.h"
 #include "main.h"
 #include "memio.h"
 #include "operations.h"
 
 /* Render every X operations */
-#define RENDER_EVERY 50
+#define RENDER_EVERY 10
 
 /* Function prototypes */
-static struct sdl2_session *	init_sdl2(int w, int h, const char *name);
+static struct sdl2_session *	init_sdl2(int panel_w, int panel_h, const char *panel_name, int mon_w, int mon_h, const char *mon_name);
 static void			kill_sdl2(struct sdl2_session *cur_sdl2);
 static void			init_disp(struct sdl2_session *cur_sdl2);
 static void			kill_disp(struct sdl2_session *cur_sdl2);
@@ -26,7 +27,7 @@ main(int argc, char *argv[])
 	uint16_t instruction;
 	
 	/* Set up current sdl2 session */
-	cur_sdl2 = init_sdl2(800, 200, "DDO-1");
+	cur_sdl2 = init_sdl2(800, 200, "DDO-1 Panel", 800, 600, "DDO-1 Monitor");
 	/* Set up the current computer */
 	cur_ddo1 = init_ddo1();
 	/* Try to load memory from the file - this will activate the computer */
@@ -76,17 +77,25 @@ main(int argc, char *argv[])
 }
 
 static struct sdl2_session *
-init_sdl2(int w, int h, const char *name)
+init_sdl2(int panel_w, int panel_h, const char *panel_name, int mon_w, int mon_h, const char *mon_name)
 {
 	struct sdl2_session *cur_sdl2;
 
 	/* Set up the sdl2 session */
 	cur_sdl2 = malloc(sizeof(*cur_sdl2));
-	cur_sdl2->display.w = w;
-	cur_sdl2->display.h = h;
-	cur_sdl2->display.name = name;
-	cur_sdl2->display.window = NULL;
-	cur_sdl2->display.renderer = NULL;
+	/* Set up panel attributes */
+	cur_sdl2->panel.w = panel_w;
+	cur_sdl2->panel.h = panel_h;
+	cur_sdl2->panel.name = panel_name;
+	cur_sdl2->panel.window = NULL;
+	cur_sdl2->panel.renderer = NULL;
+	/* Set up monitor attributes */
+	cur_sdl2->monitor.w = mon_w;
+	cur_sdl2->monitor.h = mon_h;
+	cur_sdl2->monitor.name = mon_name;
+	cur_sdl2->monitor.window = NULL;
+	cur_sdl2->monitor.renderer = NULL;
+	/* Not running yet */
 	cur_sdl2->running = SDL_FALSE;
 	/* Initialize SDL and display */
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -109,11 +118,14 @@ init_disp(struct sdl2_session *cur_sdl2)
 {
 	SDL_Event event;
 	
-	cur_sdl2->display.window = SDL_CreateWindow(cur_sdl2->display.name, 0, 0, cur_sdl2->display.w, cur_sdl2->display.h, SDL_WINDOW_SHOWN);
-	cur_sdl2->display.renderer = SDL_CreateRenderer(cur_sdl2->display.window, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE|SDL_RENDERER_PRESENTVSYNC);
-	// You may want this
-	//SDL_SetRenderDrawBlendMode(cur_sdl2->display.renderer, SDL_BLENDMODE_BLEND);
-	/* Create output texture */
+	/* Set up panel window */
+	cur_sdl2->panel.window = SDL_CreateWindow(cur_sdl2->panel.name, 0, 0, cur_sdl2->panel.w, cur_sdl2->panel.h, SDL_WINDOW_SHOWN);
+	cur_sdl2->panel.renderer = SDL_CreateRenderer(cur_sdl2->panel.window, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE|SDL_RENDERER_PRESENTVSYNC);
+	/* Set up monior window*/
+	cur_sdl2->monitor.window = SDL_CreateWindow(cur_sdl2->monitor.name, cur_sdl2->panel.w, 0, cur_sdl2->monitor.w, cur_sdl2->monitor.h, SDL_WINDOW_SHOWN);
+	cur_sdl2->monitor.renderer = SDL_CreateRenderer(cur_sdl2->monitor.window, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE|SDL_RENDERER_PRESENTVSYNC);
+	/* Load font */
+	load_font(cur_sdl2);
 	/* Poll for an event and wait 100ms - bring the window to the foreground */
 	SDL_PollEvent(&event);
 	SDL_Delay(100);
@@ -126,7 +138,13 @@ kill_disp(struct sdl2_session *cur_sdl2)
 {
 	/* Delay to prevent segfaults in other thread loops */
 	SDL_Delay(100);
-	SDL_DestroyRenderer(cur_sdl2->display.renderer);
-	SDL_DestroyWindow(cur_sdl2->display.window);
+	/* Kill font */
+	unload_font(cur_sdl2);
+	/* Kill monitor */
+	SDL_DestroyRenderer(cur_sdl2->monitor.renderer);
+	SDL_DestroyWindow(cur_sdl2->monitor.window);
+	/* Kill panel */
+	SDL_DestroyRenderer(cur_sdl2->panel.renderer);
+	SDL_DestroyWindow(cur_sdl2->panel.window);
 	SDL_Quit();
 }

@@ -3,6 +3,7 @@
 
 /* Definitions for the 32 preset colors plus 16 customizable */
 struct color DDO1_COLORS[] =  {
+        { 255, 255, 255 },
         { 0, 0, 0 }, 
         { 0, 0, 128 }, 
         { 0, 0, 255 }, 
@@ -29,7 +30,6 @@ struct color DDO1_COLORS[] =  {
         { 255, 128, 255 }, 
         { 255, 255, 0 }, 
         { 255, 255, 128 }, 
-        { 255, 255, 255 }, 
         { 16, 16, 16 },
         { 32, 32, 32 },
         { 48, 48, 48 },

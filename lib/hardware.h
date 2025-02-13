@@ -31,14 +31,14 @@
 #define MON_IMAGESIZE   38400
 #define MON_TEXTMODE    0
 #define MON_IMAGEMODE   1
-#define MON_DEVICE      0b1100000110000000
-#define MON_VSW         0b1100000110000001
-#define MON_VIC         0b1100000110000010
-#define MON_VMC         0b1100000110000100
-#define MON_VDP         0b1100000110001000
-#define MON_VCR         0b1100000110010000
-#define MON_VCG         0b1100000110100000
-#define MON_VCB         0b1100000111000000
+#define MON_DEVICE      0b1100010100000000
+#define MON_VSW         0b1100010100000001
+#define MON_VIC         0b1100010100000010
+#define MON_VMC         0b1100010100000100
+#define MON_VDP         0b1100010100001000
+#define MON_VCR         0b1100010100010000
+#define MON_VCG         0b1100010100100000
+#define MON_VCB         0b1100010101000000
 
 /* Struct for DDO-1 hardware */
 struct ddo1 {
@@ -58,8 +58,9 @@ struct ddo1 {
         } tty_kbd;
         struct monitor {
                 uint8_t mode;
-                uint8_t text[MON_TEXTSIZE];
-                uint8_t image[MON_IMAGESIZE];
+                uint16_t cursor;
+                uint16_t text[MON_TEXTSIZE];
+                uint16_t image[MON_IMAGESIZE];
                 struct color *colors;
         } monitor;
 };
@@ -71,5 +72,6 @@ extern void             TTY_P_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instructio
 extern void             TTY_K_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction);
 extern void             keypressed(struct ddo1 *cur_ddo1, int keycode);
 extern void             keyreleased(struct ddo1 *cur_ddo1, int keycode);
+extern void             MON_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction);
 
 #endif

@@ -34,6 +34,7 @@ init_ddo1(void)
         }
         /* Initialize monitor - set text mode, zero out display, and init colors */
         cur_ddo1->monitor.mode = MON_TEXTMODE;
+        cur_ddo1->monitor.cursor = 0;
         for (i = 0; i < MON_IMAGESIZE; i += 1) {
                 if (i < MON_TEXTSIZE) cur_ddo1->monitor.text[i] = 0;
                 cur_ddo1->monitor.image[i] = 0;
@@ -196,3 +197,68 @@ keyreleased(struct ddo1 *cur_ddo1, int keycode)
                 }
         }
 }
+
+void
+MON_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
+{
+        uint8_t x, y;
+        /* Swap video mode - can't be combined with other operations */
+        if ((instruction & MON_VSW) == MON_VSW) {
+                if (cur_ddo1->monitor.mode == MON_TEXTMODE) {
+                        cur_ddo1->monitor.mode = MON_IMAGEMODE;
+                } else {
+                        cur_ddo1->monitor.mode = MON_TEXTMODE;
+                }
+                return;
+        }
+
+        /* Insert character at cursor location - only in text mode and don't combine with other operations */
+        if ((instruction & MON_VIC) == MON_VIC) {
+                if (cur_ddo1->monitor.mode == MON_IMAGEMODE) {
+                        fprintf(stderr, "*** Error: program tried to write character while in image mode\n");
+                        return;
+                }
+                cur_ddo1->monitor.text[cur_ddo1->monitor.cursor] = cur_ddo1->AC;
+                cur_ddo1->monitor.cursor += 1;
+                if (cur_ddo1->monitor.cursor > (80 * 25)) {
+                        // future: scroll all values
+                        cur_ddo1->monitor.cursor = 0;
+                }
+                return;
+        }
+
+        /* Move cursor or pixel pointer - must be within bounds of current mode; lower order byte = x, higher = y */
+        if ((instruction & MON_VMC) == MON_VMC) {
+                x = cur_ddo1->AC & 0xFF;
+                y = (cur_ddo1->AC >> 8) & 0xFF;
+                if (cur_ddo1->monitor.mode == MON_TEXTMODE) {
+                        if (x >= 80 || y >= 25) {
+                                fprintf(stderr, "*** Error: program tried to move the cursor out of bounds in text mode (%u,%u)\n", x, y);
+                                return;
+                        } else {
+                                cur_ddo1->monitor.cursor = y * 80 + x;
+                                return;
+                        }
+                } else {
+                        if (x >= 240 || y >= 160) {
+                                fprintf(stderr, "*** Error: program tried to move the cursor out of bounds in image mode (%u, %u)\n", x, y);
+                                return;
+                        } else {
+                                cur_ddo1->monitor.cursor = y * 240 + x;
+                        }
+                }
+        }
+
+        /* Draw pixel at current pixel pointer - must be in video mode; pixel cursor does not move like text */
+        if ((instruction & MON_VDP) == MON_VDP) {
+                if (cur_ddo1->monitor.mode == MON_TEXTMODE) {
+                        fprintf(stderr, "*** Error: program tried to draw pixel while in text mode\n");
+                        return;
+                }
+                cur_ddo1->monitor.image[cur_ddo1->monitor.cursor] = cur_ddo1->AC;
+        }
+        // VCR: video color red
+        // VCG: video color green
+        // VCB: video color blue
+}
+

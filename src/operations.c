@@ -165,6 +165,8 @@ INSTRUCTION_IOT(struct ddo1 *cur_ddo1, WORDTYPE instruction)
                 TTY_P_HANDLER(cur_ddo1, instruction);
         } else if (masked_instruction == TTY_K_DEVICE) {
                 TTY_K_HANDLER(cur_ddo1, instruction);
+        } else if (masked_instruction == MON_DEVICE) {
+                MON_HANDLER(cur_ddo1, instruction);
         }
 }
 

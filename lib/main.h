@@ -10,7 +10,9 @@ struct sdl2_session {
 		const char *name;
 		SDL_Window *window;
 		SDL_Renderer *renderer;
-	} display;
+	} panel;
+	struct display monitor;
+	SDL_Texture **font;
 	SDL_bool running;
 };
 
