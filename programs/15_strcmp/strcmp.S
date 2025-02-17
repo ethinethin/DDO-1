@@ -5,12 +5,14 @@
 ;   correctly handles newlines and backspaces.
 ;
 ; It does not currently check if more characters are entered than are reserved
-;   for the buffer. The buffer is at the end of the programming, meaning the
-;   user would have to enter tens of thousands of characters for a buffer
-;   overflow. But it would be nice to implement buffer checking, then have the
-;   buffer region directly after the user_input subroutine.
+;   for the buffer. The buffer is at the end of the program, meaning the user
+;   would have to enter tens of thousands of characters for a buffer overflow.
+;   But it would be nice to implement buffer checking, then have the buffer
+;   region directly after the user_input subroutine.
 ;
-; The stcmp subroutine itself uses two variables, s1 and s2, as arguments.
+; The stcmp subroutine itself uses two labels, s1 and s2, as arguments. The user
+;   stores the addresses of the two strings at those labels, then calls the
+;   subroutine. It returns AC = 0 for a match, and AC = 1 for a non-match.
 
         START   2048
 main_loop,
