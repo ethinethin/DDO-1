@@ -128,6 +128,11 @@ draw_text_mode(struct sdl2_session *cur_sdl2, struct ddo1 *cur_ddo1)
                         draw_char(cur_sdl2, x, y, letter, color);
                 }
         }
+        /* Draw an underscore at the cursor location */
+        x = cur_ddo1->monitor.cursor % 80 * FONT_WIDTH * FONT_SCALE_X;
+        y = cur_ddo1->monitor.cursor / 80 * FONT_HEIGHT * FONT_SCALE_Y;
+        color = cur_ddo1->monitor.color;
+        draw_char(cur_sdl2, x, y, '_', color);
 }
 
 static void
