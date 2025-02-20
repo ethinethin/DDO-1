@@ -180,6 +180,8 @@ uiota_1_rdy,
         TAD     char_ASCII
         DCA     (16)
 uiota_done,
+        ; append a terminal 0 for a string terminator
+        DCA     (16)
         JMP     (uiota)
 ; helper subroutine to store and reload current value
 update_uiota_n, .
