@@ -51,7 +51,15 @@ main(int argc, char *argv[])
 		}
 		/* Don't draw after every operation - only after the number of *
 		 * instructions defined above  				       */
-		if (counter % RENDER_EVERY == 0) draw_all(cur_sdl2, cur_ddo1);
+		if (counter % RENDER_EVERY == 0) {
+			draw_all(cur_sdl2, cur_ddo1);
+			/* I added this delay to help reduce some of the CPU *
+			 * strain, and it shouldn't impact performance too   *
+			 * much, but I need to benchmark it ...              */
+			SDL_Delay(20);
+			/* But it reduces CPU strain from ~100% to ~60%, at  *
+			 * cost of adding 20 ms delays in between renders... */
+		}
 		counter += 1;
 		/* Check for event and loop */
 		if (SDL_PollEvent(&event) == 0) continue;

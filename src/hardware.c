@@ -100,6 +100,11 @@ keypressed(struct ddo1 *cur_ddo1, int keycode)
 {
         int i;
 
+        /* Ignore these particular keycodes */
+        if (keycode == SDLK_LCTRL || keycode == SDLK_RCTRL ||
+            keycode == SDLK_LALT || keycode == SDLK_RALT ||
+            keycode == SDLK_LGUI || keycode == SDLK_RGUI) return;
+
         /* If shift, enable shift */
         if (keycode == SDLK_LSHIFT) {
                 LSHIFT = 1;
@@ -167,6 +172,11 @@ keyreleased(struct ddo1 *cur_ddo1, int keycode)
 {
         int i, j;
 
+        /* Ignore these particular keycodes */
+        if (keycode == SDLK_LCTRL || keycode == SDLK_RCTRL ||
+                keycode == SDLK_LALT || keycode == SDLK_RALT ||
+                keycode == SDLK_LGUI || keycode == SDLK_RGUI) return;
+
         /* If shift, disable shift */
         if (keycode == SDLK_LSHIFT) {
                 LSHIFT = 0;
@@ -174,6 +184,11 @@ keyreleased(struct ddo1 *cur_ddo1, int keycode)
         } else if (keycode == SDLK_RSHIFT) {
                 RSHIFT = 0;
                 return;
+        }
+        
+        /* If shift is held in, fix the keycode */
+        if (LSHIFT == 1 || RSHIFT == 1) {
+                keycode = shift_fix(keycode);
         }
         /* Find the key in the queue */
         for (i = 0; i < cur_ddo1->tty_kbd.n_key; i += 1) {
