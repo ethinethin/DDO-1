@@ -1,30 +1,32 @@
-;;;;
-; loop test - test a basic loop
-;;;;
+; loop_test - test a basic loop that loops 1000 times
+;
+; During each loop, the link bit is complemented and the counter is increased.
+;   When the counter reaches 1000 (max_loops), the program ends. The program
+;   entry point is 2048 (memory 0 of page 1). The check against max_loops is
+;   done by calculating the two's complement negative of max_loops, by one's
+;   complementing it and incrementing it one (CMA IAC).
+;
+; The purpose of this program is to make the L-bit indicator on the panel
+;   repeatedly flash on and off, although it may not be visible if the operating
+;   speed of the simulator is set too high.
+;
+
         START   2048            ; Start on page 1
 loop,
-        CLA CML                 ; complement the link bit
+        CLA CML
         ISZ     counter         ; increment counter
-        NOP                     ; placeholder for skip (not necessary)
+        NOP                     ; ignore ISZ skip (not necessary)
+        ; load max_loops, make negative, then add to counter
         CLA CLL
         TAD     max_loops
-        CMA IAC                 ; convert max_loops to negative
-        TAD     counter         ; see if counter and max_loops are equal
-        SZA                     ; skip if AC = 0
-        JMP     loop            ; loop
+        CMA IAC
+        TAD     counter
+        ; if AC != 0, loop; otherwise load counter and finish
+        SZA
+        JMP     loop
         CLA CLL
-        TAD     counter         ; load counter for display purposes
+        TAD     counter
         HLT
 counter,        0               ; loop index
-max_loops,      1000            ; Number of loops
-        END                     ; Program is finished
-
-; Commentary:
-;    This program is loaded into memory location 2048 (memory location 0 of page
-;    1). During each loop, the link bit is complemented, and the value at memory
-;    location counter is increased. max_loops is converted to a negative number
-;    each loop and added to counter. If the result is 0, the loop will break and
-;    the program ends.
-;
-;    The main purpose of this program is to make the L-bit indicator to
-;    repeatedly flash on and off.
+max_loops,      1000            ; number of loops
+        END
