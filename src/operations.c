@@ -70,6 +70,10 @@ real_address(struct ddo1 *cur_ddo1, uint8_t indirect, uint8_t page, WORDTYPE ope
 {
         WORDTYPE address;
 
+        // I need to fix the below.. technically, if you are on page 0, you can 
+        // have the page bit turned on, but then the auto-inc won't auto-inc ...
+        // So I should put in logic to address that.. but I fixed my assembler
+        // to stop doing that...
         /* If we are accessing a memory location within 16 to 31 on page 0 indirectly, *
          * we are accessing an auto-increment register, so it should be incremented    *
          * before determining the address                                              */

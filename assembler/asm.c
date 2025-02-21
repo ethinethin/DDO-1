@@ -392,14 +392,15 @@ fix_page(uint16_t address)
         /* Calculate current and word page */
         cur_page = calc_page(MEMLOC);
         word_page = calc_page(address);
+
         /* Make sure it's accessible to the current page */
-        if (word_page == cur_page) {
+        if (word_page == 0) {
+                /* Should be fine to return as is */
+                return address;
+        } else if (word_page == cur_page) {
                 /* Remove page and OR current page bit */
                 address &= 0b0000011111111111;
                 address |= PAGE_BIT;
-                return address;
-        } else if (word_page == 0) {
-                /* Should be fine to return as is */
                 return address;
         } else {
                 /* The word is on a page not accessible */
