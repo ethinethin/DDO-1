@@ -33,6 +33,7 @@ execute(struct ddo1 *cur_ddo1, WORDTYPE instruction)
         operand = (BITMASK_OPERAND & instruction) >> BITSHIFT_OPERAND;
         /* Find the real address that we're accessing */
         address = real_address(cur_ddo1, (uint8_t) indirect, (uint8_t) page, operand);
+
         /* Call instruction based on op code */
         switch(op_code) {
                 case OPCODE_AND:

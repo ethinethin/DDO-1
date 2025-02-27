@@ -6,3 +6,5 @@ assembler/a.out
 */.DS_Store
 */*/.DS_Store
 test.sh
+test.S
+a.out
