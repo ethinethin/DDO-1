@@ -163,9 +163,9 @@ INSTRUCTION_IOT(struct ddo1 *cur_ddo1, WORDTYPE instruction)
         masked_instruction = instruction & BITMASK_DEVICES;
         /* Enable or disable interrupts */
         if (instruction == BITMASK_INTS_ON) {
-                cur_ddo1->ints = INTS_ON;
+                cur_ddo1->intr = INTS_ON;
         } else if (instruction == BITMASK_INTS_OFF) {
-                cur_ddo1->ints = INTS_OFF;
+                cur_ddo1->intr = INTS_OFF;
         } else if (masked_instruction == TTY_P_DEVICE) {
                 TTY_P_HANDLER(cur_ddo1, instruction);
         } else if (masked_instruction == TTY_K_DEVICE) {

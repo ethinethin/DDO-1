@@ -20,21 +20,25 @@ init_ddo1(void)
         cur_ddo1->L = 0;
         cur_ddo1->PC = 0;
         cur_ddo1->run = DDO1_OFF;
-        cur_ddo1->ints = INTS_OFF;
+        cur_ddo1->intr = INTS_OFF;
         for (i = 0; i < MEMSIZE; i += 1) {
                 cur_ddo1->memory[i] = 0;
         }
-        /* Initialize printer - flag on because it's ready */
+        /* Initialize printer - flag on, interrupts off */
         cur_ddo1->tty_printer.flag = 1;
-        /* Initialize keyboard - flag off because no keys are pressed */
+        cur_ddo1->tty_printer.intr = 0;
+        /* Initialize keyboard - flag off, interrupts off */
         cur_ddo1->tty_kbd.flag = 0;
+        cur_ddo1->tty_kbd.intr = 0;
         /* Zero keys pressed */
         cur_ddo1->tty_kbd.n_key = 0;
         for (i = 0; i < 10; i += 1) {
                 cur_ddo1->tty_kbd.key[i] = 0;
         }
-        /* Initialize monitor - set flag, set text mode, default color white, zero out display */
+        /* Initialize monitor - set flag, interrupts off, set text mode,      *
+         * default color white, zero out display                              */
         cur_ddo1->monitor.flag = 1;
+        cur_ddo1->monitor.intr = 0;
         cur_ddo1->monitor.mode = MON_TEXTMODE;
         cur_ddo1->monitor.cursor = 0;
         cur_ddo1->monitor.color = 0b11111111;
@@ -64,6 +68,10 @@ TTY_P_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
         if ((instruction & TTY_TPC) == TTY_TPC) {
                 putchar(cur_ddo1->AC);
         }
+        /* Set interrupt flag */
+        if ((instruction & TTY_TIE) == TTY_TIE) {
+                cur_ddo1->tty_printer.intr = (0xFF & cur_ddo1->AC);
+        }
         /* Clean up the device after printing - flush stdout and set flag */
         fflush(stdout);
         cur_ddo1->tty_printer.flag = 1;
@@ -79,8 +87,9 @@ TTY_K_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
         }
         /* Check these individual, because they can be sent together as KRB */
         if ((instruction & TTY_KCC) == TTY_KCC) {
-                /* clear flag instruction */
+                /* clear flag and AC */
                 cur_ddo1->tty_kbd.flag = 0;
+                cur_ddo1->AC = 0;
         }
         /* This should only return something if there is information in the  *
          * buffer. If there is nothing, key[0] will be equal to 0            */
@@ -89,6 +98,10 @@ TTY_K_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
                 cur_ddo1->AC |= cur_ddo1->tty_kbd.key[0];
                 /* remove key from buffer */
                 keyreleased(cur_ddo1, cur_ddo1->tty_kbd.key[0]);
+        }
+        /* Set interrupt flag */
+        if ((instruction & TTY_KIE) == TTY_KIE) {
+                cur_ddo1->tty_kbd.intr = (0xFF & cur_ddo1->AC);
         }
 
 }
@@ -220,8 +233,8 @@ MON_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
         uint8_t x, y;
 
         /* Video swap if flag - not combined with other commands */
-        if ((instruction & MON_VSF) == MON_VSF) {
-                if (cur_ddo1->monitor.flag == 1) cur_ddo1->PC += 1;
+        if (instruction == MON_VSF && cur_ddo1->monitor.flag == 1) {
+                cur_ddo1->PC += 1;
                 return;
         }
 
@@ -296,6 +309,11 @@ MON_HANDLER(struct ddo1 *cur_ddo1, WORDTYPE instruction)
                         /* Overflow cursor if necessary */
                         if (cur_ddo1->monitor.cursor >= (240 * 160)) cur_ddo1->monitor.cursor = 0;
                 }
+        }
+        
+        /* Set interrupt flag */
+        if ((instruction & MON_VIE) == MON_VIE) {
+                cur_ddo1->monitor.intr = (0xFF & cur_ddo1->AC);
         }
 }
 

@@ -4,6 +4,7 @@
 #include "draw.h"
 #include "font.h"
 #include "hardware.h"
+#include "interrupts.h"
 #include "main.h"
 #include "memio.h"
 #include "operations.h"
@@ -41,6 +42,8 @@ main(int argc, char *argv[])
 			instruction = cur_ddo1->memory[cur_ddo1->PC];
 			cur_ddo1->PC += 1;
 			execute(cur_ddo1, instruction);
+			/* Check for interrupts */
+			check_interrupts(cur_ddo1);
 			/* redraw if the computer was halted */
 			if (cur_ddo1->run == DDO1_OFF) {
 				draw_all(cur_sdl2, cur_ddo1);

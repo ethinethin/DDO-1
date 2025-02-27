@@ -20,11 +20,13 @@
 #define TTY_TSF         0b1100001000000001
 #define TTY_TCF         0b1100001000000010
 #define TTY_TPC         0b1100001000000100
+#define TTY_TIE         0b1100001001000000
 /* definitions for teletype keyboard: device 3 */
 #define TTY_K_DEVICE    0b1100000110000000
 #define TTY_KSF         0b1100000110000001
 #define TTY_KCC         0b1100000110000010
 #define TTY_KRS         0b1100000110000100
+#define TTY_KIE         0b1100000111000000
 /* Definitions for monitor: device 10 */
 #define MON_TEXTSIZE    2000
 #define MON_IMAGESIZE   38400
@@ -36,6 +38,7 @@
 #define MON_VRC         0b1100010100000100
 #define MON_VMC         0b1100010100001000
 #define MON_VDC         0b1100010100010000
+#define MON_VIE         0b1100010101000000
 
 /* Struct for DDO-1 hardware */
 struct ddo1 {
@@ -44,17 +47,20 @@ struct ddo1 {
         WORDTYPE PC;
         WORDTYPE memory[MEMSIZE];
         uint8_t run;
-        uint8_t ints;
+        uint8_t intr;
         struct tty_printer {
                 uint8_t flag;
+                uint8_t intr;
         } tty_printer;
         struct tty_keyboard {
                 uint8_t flag;
+                uint8_t intr;
                 uint8_t n_key;
                 int key[20];
         } tty_kbd;
         struct monitor {
                 uint8_t flag;
+                uint8_t intr;
                 uint8_t mode;
                 uint16_t cursor;
                 uint8_t color;

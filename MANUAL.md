@@ -43,13 +43,48 @@ There are six memory reference instructions (MRIs). These must all specify an ad
 | 110    | IOT    | handle input/output with devices |
 | 111    | OPR    | used for microcodes |
 
+## Microcoded Instructions
+
+To be written
+
+## Interrupt Commands
+
+Hardware devices can request interrupts. By default, interrupt requests are disabled. To enable them, each device should have a specific operation to enable interrupt requests on that device. The system-wide interrupts must also be enabled with the following commands.
+
+|Binary|Mnemonic|Short for|Note|
+|---|---|---|---|
+|1100000000000001|ION|Interrupts on|Enable system-wide interrupts|
+|1100000000000010|IOF|Interrupts off|Disable system-wide interrupts|
+
+When interrupts are enabled and a device requests an interrupt, system-wide interrupts are disabled, the current program counter is saved to page 0, memory location 0, and then operation begins at page 0, memory location 1. This is essentially a JMS to mem 0, with the added effect of interrupts being disabled. After interrupt handling, the interrupt handler can indirectly jump back to program operation by using the address stored in memory location 0. To allow interrupt re-enable within the interrupt handler, there is a brief delay between ION execution and interrupt requests being active.
+
+Standard procedure for handling interrupts is to save the contents of the AC and L, then poll each device for state and handle requests as necessary. After handling interrupts, contents of AC and L should be reloaded, interrupts re-enabled, and then an indirect jump back to program operation. Following the JMS to mem 0, a jump away to memory after memory location 31 should be used to avoid overwriting auto-increment registers. The interrupt handler can poll ready flags, but there is no option to poll device-specific interrupt flags. The programmer can manually implement fine control over device polling via software flags depending on their needs.
+
 ## Teletype Device
 
-To be written.
+The teletype is a device which takes input from a user via a keyboard and may output characters to a printer device. In this simulator, the keyboard device (device 3) is used for keyboard entry, and printer device (device 4) is used for standard out to the console. Several mnemonics have been added to facilitate teletype functionality. Both the keyboard and printer may also request interrupts, initiating the cycle-stealing process.
+
+### Teletype Commands Table
+|Binary|Mnemonic|Short for|Note|
+|---|---|---|---|
+|1100001000000001|TSF|Teleprinter skip if flag|Skip if teleprinter ready flag is set|
+|1100001000000010|TCF|Teleprinter clear flag|Clear the teleprinter ready flag|
+|1100001000000100|TPC|Teleprinter print character|Print the lower byte of the AC|
+|1100001001000000|TIE|Teleprinter interrupt enable|Transfer lower byte of the AC to the interrupt flag|
+|1100001000000110|TLS|Teleprinter load and start|Combines TCF and TPC|
+|1100000110000001|KSF|Keyboard skip if flag|Skip if keyboard ready flag is set|
+|1100000110000010|KCC|Keyboard clear and read character|Reset keyboard flag and clear AC|
+|1100000110000100|KRS|Keyboard read static|OR the character in the keyboard buffer with the AC|
+|1100000111000000|KIE|Keyboard interrupt enable|Transfer lower byte of the AC to the interrupt flag|
+|1100000110000110|KRB|Keyboard read and begin next read|Combines KCC and KRS|
+
+### Teletype Commands Explained
+
+To be written
 
 ## Monitor Device
 
-The monitor device is for outputting text or images to a graphical user display device. The monitor supports two video modes (text and image), and is controlled by sending IOT operations to device 10. Several mnemonics have been added to facilitate monitor control.
+The monitor device is for outputting text or images to a graphical user display device. The monitor supports two video modes (text and image), and is controlled by sending IOT operations to device 10. Several mnemonics have been added to facilitate monitor control. The monitor may also request interrupts, initiating the cycle-stealing process.
 
 ### Monitor Commands Table
 
@@ -60,6 +95,7 @@ The monitor device is for outputting text or images to a graphical user display 
 |1100010100000100|VRC|Video Render Color|Change current color|
 |1100010100001000|VMC|Video Move Cursor|Move the location of the text/drawing cursor|
 |1100010100010000|VDC|Video Draw at Cursor|Output character or pixel at cursor location|
+|1100010101000000|VIE|Video Interrupt Enable|Turn on monitor-specific interrupts|
 
 These are pretty straight forward, but how they work is described below.
 
@@ -70,6 +106,7 @@ These are pretty straight forward, but how they work is described below.
 3. VRC - sets the current drawing color. This switches the current drawing color using the contents of the AC. The color format used is RGB332 (i.e. 3-bits for red, 3-bits for green, and 2-bits for blue).
 4. VDC - this draws at the current cursor location. If in text mode, the 8-bit ASCII character in the lower byte of the AC will be drawn at the cursor location, in the color specified by VSC. If in image mode, a pixel will be drawn at the current pixel location. After the operation, the cursor location will be increased by one. 
 5. VMC - move the cursor or pixel pointer to location specified by the AC; lower order byte = x, higher order byte = y
+6. VIE - disable or enable the monitor's ability to request interrupts. By default, this is turned off. With this command, the lower order byte of the accumulator is set to the device's interrupt flag. For the device to request interrupts, this must be a non-zero value, in addition to system-wide interrupts also being enabled.
 
 
 # Self-notes, please ignore
