@@ -1,7 +1,17 @@
 ; interrupts.S - a test program for testing interrupts
 ;
-; Interrupts aren't ready yet in the simulator but when they are, this program
-;   will be ready to test them!
+; In a real program, one might want to set up device interrupt buffer locations
+;   at the later auto-increment registers (e.g. 29, 30, and 31), so the earlier
+;   registers are available for non-interrupt functions.
+;
+; Also, one might want to be more judicious in which interrupts are enabled. In
+;   this program, the monitor and printer request interrupts even when there is
+;   nothing to output. That will keep the program in the interrupt handling
+;   section longer than necessary. For this program, there are approximately 8
+;   to 9 interrupt-related instructions for every main program instruction.
+;
+
+
 
 ; start at page 0, mem 0
         START   0
@@ -30,11 +40,11 @@ int_L,          0
 int_setup,      .
         ; set up keyboard, printer, and monitor buffer pointers
         CLA
-        TAD     buffer_0
+        TAD     (buffer_0)
         DCA     16
-        TAD     buffer_0
+        TAD     (buffer_0)
         DCA     17
-        TAD     buffer_0
+        TAD     (buffer_0)
         DCA     18
         ; enable device-specific interrupt flags
         IAC
@@ -63,79 +73,71 @@ int_skipchain,  .
 
 ; int_ttyk - handle keyboard input
 int_ttyk,       .
-        ; load keystroke into buffer
+        ; store keystroke in buffer
         CLA
-        TAD     16              ; load buffer location
-        JMS     mask_b          ;   ensure in buffer
-        DCA     16              ;   store buffer location
-        KRB                     ; load keystroke
-        DCA     (16)            ;   store in buffer
-        ; add a string-terminating 0 after it
-        TAD     16
-        JMS     mask_b
-        DCA     16
+        KRB
         DCA     (16)
-        ; move buffer back one, before terminator
+        ; mask buffer location
+        TAD     16
+        JMS     (bmask_0)
+        DCA     16
+        ; store string-terminating 0 in buffer
+        DCA     (16)
+        ; decrement buffer location by 1
         CMA
         TAD     16
-        JMS     mask_b
         DCA     16
         JMP     (int_ttyk)
 
 ; int_ttyp - handle printer output
 int_ttyp,       .
-        ; load current character
+        ; load character from buffer
         CLA
-        TAD     17
-        JMS     mask_b
-        DCA     17
         TAD     (17)
-        ; if it's 0, move the buffer back and leave
+        ; if this is non-zero, print it
         SZA
         JMP     int_ttyp_p
+        ; otherwise decrement buffer
         CMA
         TAD     17
-        JMS     mask_b
         DCA     17
         JMP     (int_ttyp)
 int_ttyp_p,
-        ; print out character
+        ; output character
         TLS
+        ; mask buffer location
+        CLA
+        TAD     17
+        JMS     (bmask_0)
+        DCA     17
         JMP     (int_ttyp)
 
 ; int_mon - handle monitor output
 int_mon,        .
-        ; load current character
+        ; load character from buffer
         CLA
-        TAD     18
-        JMS     mask_b
-        DCA     18
         TAD     (18)
-        ; if it's 0, move the buffer back and leave
+        ; if this is non-zero, print it
         SZA
         JMP     int_mon_p
+        ; otherwise decrement buffer
         CMA
         TAD     18
-        JMS     mask_b
         DCA     18
         JMP     (int_mon)
 int_mon_p,
-        ; print out character
+        ; output character
         VDC
+        ; mask buffer location
+        CLA
+        TAD     18
+        JMS     (bmask_0)
+        DCA     18
         JMP     (int_mon)
 
-; mask_b - wrap address to fit within the circular buffer
-mask_b,         .
-        ; mask the address to ensure it's within the buffer size
-        AND     (buffer_mask_0)
-        ; add the page address to ensure it's in the correct page
-        TAD     (buffer_page_0)
-        JMP     (mask_b)
-
-; store page 2 variable addresses on page 0
+; store page 2 addresses on page 0
 buffer_0,       buffer
-buffer_mask_0,  buffer_mask
-buffer_page_0,  buffer_page
+bmask_0,        bmask
 
 
 
@@ -143,22 +145,34 @@ buffer_page_0,  buffer_page
         PPD
 ; main - main entry point for the program
 main,
-        CLA CLL
         ; set up interrupts
+        CLA CLL
         JMS     int_setup
 main_l,
-        ; loop eternally
-        NOP
+        ; increment val1 and loop until val1 overflows
+        CLA
+        TAD     val1
+        ISZ     val1
         JMP     main_l
+        HLT
+val1,   0
 
 
 
 ; pad to page 2
         PPD
-; buffer location - pad with 8 zeroes
+; buffer location - pad with 32 zeroes
 buffer,         .
-        PAD     8
+        PAD     32
 ; buffer attributes
-buffer_mask,    7
-buffer_page,    4096
+bmask_mask,     31
+bmask_page,     buffer
+; mask AC to fit in buffer
+bmask,          .
+        AND     bmask_mask
+        TAD     bmask_page
+        JMP     (bmask)
+
+
+
         END

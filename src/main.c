@@ -42,10 +42,11 @@ main(int argc, char *argv[])
 			instruction = cur_ddo1->memory[cur_ddo1->PC];
 			cur_ddo1->PC += 1;
 			execute(cur_ddo1, instruction);
-			/* Check for interrupts */
-			check_interrupts(cur_ddo1);
-			/* redraw if the computer was halted */
-			if (cur_ddo1->run == DDO1_OFF) {
+			if (cur_ddo1->run == DDO1_ON) {
+				/* not halted, check for interrupts */
+				check_interrupts(cur_ddo1);				
+			} else {
+				/* halted, redraw one last time */
 				draw_all(cur_sdl2, cur_ddo1);
 			}
 		} else {

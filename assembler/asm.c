@@ -50,6 +50,7 @@ main(int argc, char *argv[])
                 fprintf(stderr, "*** Error: wrong number of arguments\n");
                 exit(1);
         }
+        printf("%s %s\n", argv[0], argv[1]);
         /* Load the file and make sure it exists */
         f = fopen(argv[1], "r");
         if (f == NULL) {

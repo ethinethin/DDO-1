@@ -108,6 +108,13 @@ These are pretty straight forward, but how they work is described below.
 5. VMC - move the cursor or pixel pointer to location specified by the AC; lower order byte = x, higher order byte = y
 6. VIE - disable or enable the monitor's ability to request interrupts. By default, this is turned off. With this command, the lower order byte of the accumulator is set to the device's interrupt flag. For the device to request interrupts, this must be a non-zero value, in addition to system-wide interrupts also being enabled.
 
+## The Assembler
+
+To be written
+
+### Binary Format Explained
+
+To be written
 
 # Self-notes, please ignore
 
